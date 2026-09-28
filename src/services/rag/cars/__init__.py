@@ -1,0 +1,1 @@
+"""Car catalog RAG pipeline."""

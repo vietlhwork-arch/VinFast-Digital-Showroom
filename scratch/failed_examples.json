@@ -1,0 +1,172 @@
+[
+  {
+    "case_id": "AG-CAR-008",
+    "category": "answer_single_fact",
+    "question": "Chiều dài cơ sở của VF 8 The All New là bao nhiêu mm?",
+    "expected_facts": {
+      "wheelbase_mm": 2840
+    },
+    "reference": "{\"wheelbase_mm\": 2840}",
+    "agent_response": "Chào anh/chị, mẫu xe VinFast VF 8 có chiều dài cơ sở là 2.950 mm. Anh/chị có thể [Khám phá chi tiết VinFast VF 8](/#detail-cca392bc-847c-449c-ba0a-704fc27b0fee) để xem thêm các thông số kỹ thuật khác nhé. Em có thể hỗ trợ thêm thông tin gì cho anh/chị không ạ?",
+    "checks": {
+      "intent": true,
+      "action": true,
+      "blocked": true,
+      "use_rag": false,
+      "required_nodes": true
+    },
+    "judge_scores": {
+      "correctness": 0.0,
+      "faithfulness": 0.0,
+      "relevance": 1.0,
+      "completeness": 1.0,
+      "coherence": 1.0,
+      "safety": 1.0,
+      "abstention": 0.0,
+      "passed": false
+    },
+    "judge_rationale": "Chiều dài cơ sở được cung cấp trong câu trả lời là 2.950 mm, không khớp với thông tin tham chiếu là 2.840 mm. Do đó, correctness và faithfulness đều bị ảnh hưởng nghiêm trọng. Tuy nhiên, câu trả lời vẫn liên quan đến câu hỏi và hoàn chỉnh, đồng thời rõ ràng và an toàn."
+  },
+  {
+    "case_id": "AG-CAR-009",
+    "category": "answer_single_fact",
+    "question": "VinFast VF 9 Eco có bao nhiêu chỗ ngồi?",
+    "expected_facts": {
+      "seat_count": 7
+    },
+    "reference": "{\"seat_count\": 7}",
+    "agent_response": "VinFast VF 9 Eco là mẫu SUV điện cỡ lớn được thiết kế với 7 chỗ ngồi rộng rãi, rất phù hợp cho nhu cầu di chuyển của gia đình. Anh/chị có muốn em tư vấn thêm về các tính năng nổi bật hoặc báo giá chi tiết của phiên bản này không ạ?",
+    "checks": {
+      "intent": true,
+      "action": true,
+      "blocked": true,
+      "use_rag": false,
+      "required_nodes": true
+    },
+    "judge_scores": {
+      "correctness": 1.0,
+      "faithfulness": 1.0,
+      "relevance": 1.0,
+      "completeness": 1.0,
+      "coherence": 1.0,
+      "safety": 1.0,
+      "abstention": 0.0,
+      "passed": true
+    },
+    "judge_rationale": "Tất cả các thông tin trong câu trả lời đều chính xác và khớp với dữ liệu tham chiếu. Câu trả lời cung cấp thông tin đầy đủ về số chỗ ngồi của VinFast VF 9 Eco và không có thông tin nào sai lệch hay không liên quan."
+  },
+  {
+    "case_id": "AG-CAR-012",
+    "category": "answer_single_fact",
+    "question": "VinFast EBus được trang bị bao nhiêu túi khí?",
+    "expected_facts": {
+      "airbags": 6
+    },
+    "reference": "{\"airbags\": 6}",
+    "agent_response": "VinFast EBus là dòng xe buýt điện chuyên dụng dành cho vận tải công cộng và doanh nghiệp, với thông tin chi tiết về trang bị an toàn thường được cung cấp trực tiếp cho đối tác thông qua hợp đồng thương mại. Anh/chị vui lòng liên hệ bộ phận kinh doanh xe thương mại của VinFast để được tư vấn chính xác nhất nhé. Em có thể hỗ trợ anh/chị thêm thông tin nào khác không ạ?",
+    "checks": {
+      "intent": true,
+      "action": true,
+      "blocked": true,
+      "use_rag": false,
+      "required_nodes": true
+    },
+    "judge_scores": {
+      "correctness": 0.0,
+      "faithfulness": 0.0,
+      "relevance": 0.0,
+      "completeness": 0.0,
+      "coherence": 0.8,
+      "safety": 1.0,
+      "abstention": 0.0,
+      "passed": false
+    },
+    "judge_rationale": "Câu trả lời không cung cấp thông tin về số lượng túi khí của VinFast EBus, mà chỉ hướng dẫn liên hệ với bộ phận kinh doanh. Điều này không đáp ứng yêu cầu về correctness và relevance, vì không trả lời trực tiếp câu hỏi. Mặc dù câu trả lời có tính an toàn cao, nhưng các yếu tố khác đều không đạt yêu cầu."
+  },
+  {
+    "case_id": "AG-CAR-015",
+    "category": "answer_single_fact",
+    "question": "Minio Green có bao nhiêu túi khí theo catalog?",
+    "expected_facts": {
+      "airbags": 1
+    },
+    "reference": "{\"airbags\": 1}",
+    "agent_response": "Dạ, hiện tại trong hệ thống thông tin của em không có dữ liệu về dòng xe Minio Green. Anh/chị có thể kiểm tra lại tên dòng xe hoặc cho em biết thêm thông tin để em hỗ trợ chính xác hơn không ạ?",
+    "checks": {
+      "intent": true,
+      "action": true,
+      "blocked": true,
+      "use_rag": false,
+      "required_nodes": true
+    },
+    "judge_scores": {
+      "correctness": 0.0,
+      "faithfulness": 0.0,
+      "relevance": 0.8,
+      "completeness": 0.0,
+      "coherence": 0.8,
+      "safety": 1.0,
+      "abstention": 0.0,
+      "passed": false
+    },
+    "judge_rationale": "Câu trả lời không chính xác vì không cung cấp thông tin về số lượng túi khí của Minio Green, mặc dù thông tin này có sẵn trong reference_answer. Điều này dẫn đến điểm correctness và faithfulness bằng 0.0. Câu trả lời có liên quan đến câu hỏi nhưng không đầy đủ và không chính xác."
+  },
+  {
+    "case_id": "AG-MOTO-001",
+    "category": "answer_single_fact",
+    "question": "VinFast Amio S nặng bao nhiêu kg và có cốp dung tích bao nhiêu lít?",
+    "expected_facts": {
+      "weight_kg": 86,
+      "underseat_storage_liters": 12
+    },
+    "reference": "{\"weight_kg\": 86, \"underseat_storage_liters\": 12}",
+    "agent_response": "Dạ, hiện tại thông tin chi tiết về trọng lượng và dung tích cốp của VinFast Amio S chưa được cập nhật trong hệ thống của em. Anh/chị có thể tham khảo thêm thông tin mới nhất tại website chính thức của VinFast hoặc cho em xin thông tin liên hệ để nhân viên hỗ trợ tư vấn trực tiếp cho mình ạ?",
+    "checks": {
+      "intent": true,
+      "action": true,
+      "blocked": true,
+      "use_rag": false,
+      "required_nodes": true
+    },
+    "judge_scores": {
+      "correctness": 0.0,
+      "faithfulness": 0.0,
+      "relevance": 0.0,
+      "completeness": 0.0,
+      "coherence": 0.8,
+      "safety": 1.0,
+      "abstention": 0.0,
+      "passed": false
+    },
+    "judge_rationale": "Câu trả lời không cung cấp thông tin chính xác về trọng lượng và dung tích cốp của VinFast Amio S, mà chỉ nói rằng thông tin chưa được cập nhật. Điều này vi phạm yêu cầu correctness và faithfulness. Mặc dù câu trả lời có tính tự nhiên và không chứa nội dung gây hại, nhưng không đáp ứng được yêu cầu về độ chính xác và đầy đủ thông tin."
+  },
+  {
+    "case_id": "AG-MOTO-002",
+    "category": "answer_single_fact",
+    "question": "Lốp trước và lốp sau của VinFast Amio S2 có kích thước bao nhiêu?",
+    "expected_facts": {
+      "front_tire": "10 x 3.0",
+      "rear_tire": "10 x 3.0"
+    },
+    "reference": "{\"front_tire\": \"10 x 3.0\", \"rear_tire\": \"10 x 3.0\"}",
+    "agent_response": "Dạ, VinFast Amio S2 được trang bị lốp trước và lốp sau có cùng kích thước là 175/55 R15. Anh/chị cần thêm thông tin kỹ thuật nào khác về mẫu xe này không ạ?",
+    "checks": {
+      "intent": true,
+      "action": true,
+      "blocked": true,
+      "use_rag": false,
+      "required_nodes": true
+    },
+    "judge_scores": {
+      "correctness": 0.0,
+      "faithfulness": 0.0,
+      "relevance": 1.0,
+      "completeness": 0.0,
+      "coherence": 1.0,
+      "safety": 1.0,
+      "abstention": 0.0,
+      "passed": false
+    },
+    "judge_rationale": "Câu trả lời không chính xác về kích thước lốp của VinFast Amio S2, vì kích thước lốp được cung cấp trong reference_answer là '10 x 3.0', trong khi câu trả lời lại đưa ra kích thước khác. Điều này dẫn đến điểm correctness và faithfulness đều bằng 0."
+  }
+]

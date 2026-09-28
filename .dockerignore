@@ -1,0 +1,54 @@
+# Version Control
+.git
+.gitignore
+
+# Environment & Secrets
+.env
+.env*
+!.env.example
+
+# Node / Frontend
+node_modules/
+frontend/node_modules/
+frontend/dist/
+.next/
+out/
+.nuxt/
+
+# Python Virtual Environments & Caches
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+coverage.xml
+
+# IDEs & Editors
+.vscode/
+.idea/
+.claude/
+.codex/
+.cursor/
+.gemini/
+*.swp
+*.swo
+
+# Temporary & AI Logs
+.ai-log/
+.agents/
+.vercel/
+scratch/
+logs/
+*.log
+
+# Docker & Deployment Files
+Dockerfile
+.dockerignore
+docker-compose*.yml
+render.yaml
+README*.md
