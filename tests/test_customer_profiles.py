@@ -51,7 +51,7 @@ async def test_customer_profile_lifecycle():
             "preferred_time": "10:00",
             "notes": "Muốn thử tính năng ADAS trên cao tốc"
         }
-        booking_resp = await client.post("/api/bookings", json=booking_payload)
+        booking_resp = await client.post("/api/bookings", json=booking_payload, headers=headers)
         assert booking_resp.status_code == 201, booking_resp.text
 
         # 4. Check /api/customer-profiles/me -> should return profile with joined account info
@@ -69,23 +69,12 @@ async def test_customer_profile_lifecycle():
 
 
 @pytest.mark.asyncio
-async def test_anonymous_guest_chat_does_not_create_profile():
-    """Khách vãng lai ẩn danh không đăng nhập và không điền form lái thử -> KHÔNG tạo profile."""
+async def test_anonymous_guest_cannot_open_support_conversation():
+    """Chat hỗ trợ chứa dữ liệu cá nhân nên luôn yêu cầu đăng nhập."""
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
-        anon_session = f"anon_session_{uuid.uuid4().hex[:8]}"
-        # Chat 1 câu
-        try:
-            resp = await client.post("/api/chat", json={
-                "session_id": anon_session,
-                "message": "Tôi muốn tìm xe máy tầm 20 triệu",
-                "user_id": None
-            })
-            assert resp.status_code == 200
-            # Check that no profile was created with this session
-            list_resp = await client.get("/api/customer-profiles", params={"search": anon_session})
-            assert list_resp.status_code == 200
-            assert len(list_resp.json()) == 0
-        except Exception:
-            pytest.skip("Database connection unavailable in test environment")
-        print("✅ Anonymous Guest Profile Guard Verified (0 profiles created for anonymous guest)!")
+        response = await client.post(
+            "/api/conversations",
+            json={"subject": "Tư vấn xe máy điện"},
+        )
+        assert response.status_code == 401
