@@ -540,7 +540,7 @@ export default function UserMailboxDrawer({ open, onClose, user }: UserMailboxDr
                           <span>Báo giá chưa được chấp thuận hoặc đã hết hiệu lực</span>
                         </div>
                         <p className="text-[11px] text-slate-600">
-                          Yêu cầu báo giá mẫu xe <strong>{q.vehicle_name}</strong> hiện chưa được phê duyệt. Quý khách vui lòng liên hệ hotline <strong>1900 23 23 89</strong> hoặc yêu cầu tư vấn AI để nhận báo giá cập nhật mới nhất.
+                          Yêu cầu báo giá mẫu xe <strong>{q.vehicle_name}</strong> hiện chưa được phê duyệt. Quý khách vui lòng liên hệ hotline <strong>1900 23 23 89</strong> hoặc chat với nhân viên để nhận báo giá cập nhật mới nhất.
                         </p>
                       </div>
                     ) : (

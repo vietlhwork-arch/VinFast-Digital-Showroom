@@ -8,7 +8,7 @@ import Header from '@/components/Header';
 import Hero from '@/components/Hero';
 import VehicleShowcase from '@/components/VehicleShowcase';
 import CompareBar from '@/components/CompareBar';
-import AIChatWidget from '@/components/AIChatWidget';
+import SupportChatWidget from '@/components/SupportChatWidget';
 import StaffDrawer from '@/components/StaffDrawer';
 import AdminDashboardModal from '@/components/AdminDashboardModal';
 import AdminPortalModal from '@/components/AdminPortalModal';
@@ -488,12 +488,6 @@ export default function App() {
     setCurrentUser(user);
     setRole(user.role);
 
-    // Non-blocking background session binding
-    const activeSession = sessionStorage.getItem('vinfast_session_id') || '';
-    if (activeSession && user.id) {
-      api.bindUserSession({ session_id: activeSession, user_id: user.id }).catch(() => {});
-    }
-
     if (user.role === 'admin') {
       setAdminDashboardOpen(true);
     } else if (user.role === 'staff') {
@@ -509,25 +503,15 @@ export default function App() {
   }, [pendingTestDriveVehicle]);
 
   const handleLogout = useCallback(() => {
-    const activeSession = sessionStorage.getItem('vinfast_session_id') || '';
-    const userId = currentUser?.id;
-
-    // 1. Non-blocking background session termination
-    if (activeSession && userId) {
-      api.endChatSession({ session_id: activeSession, user_id: userId }).catch(() => {});
-    }
-
-    // 2. Synchronous Instant State & Storage Reset (0ms, NO window reload)
     localStorage.removeItem('vinfast_token');
     localStorage.removeItem('vinfast_user');
-    sessionStorage.removeItem('vinfast_session_id');
 
     setCurrentUser(null);
     setRole('customer');
     setStaffDrawerOpen(false);
     setAdminDashboardOpen(false);
     setProfileModalOpen(false);
-  }, [currentUser?.id]);
+  }, []);
 
 
   const handleRequestQuote = useCallback((_vehicle: Vehicle) => {
@@ -755,7 +739,7 @@ export default function App() {
                     onClick={() => setChatOpen(true)}
                     className="px-8 py-4 bg-white text-blue-900 text-base font-bold rounded-xl hover:bg-blue-50 transition-all shadow-lg hover:scale-105"
                   >
-                    Đặt lịch qua AI Advisor
+                    Chat với nhân viên
                   </button>
                   <button
                     onClick={() => handleNavClick('showcase')}
@@ -972,21 +956,12 @@ export default function App() {
         user={currentUser}
       />
 
-      {/* AI Chat */}
-      <AIChatWidget
+      {/* Human customer support chat */}
+      <SupportChatWidget
         externalOpen={chatOpen}
         onExternalOpenChange={setChatOpen}
-        onRequestQuote={handleRequestQuote}
-        onOpenTestDrive={handleOpenTestDrive}
-        onViewDetail={handleViewDetail}
         currentUser={currentUser}
         onOpenAuthModal={() => setAuthModalOpen(true)}
-        onUpdateUser={(updated) => {
-          setCurrentUser(updated);
-          try {
-            localStorage.setItem('vinfast_user', JSON.stringify(updated));
-          } catch {}
-        }}
       />
 
       {/* Admin Dashboard Modal */}

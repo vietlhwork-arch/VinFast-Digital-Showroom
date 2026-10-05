@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { api } from '@/lib/api';
 import {
   X, User, Mail, Lock, Phone, ArrowRight, CheckCircle2,
@@ -7,12 +7,6 @@ import {
 import { CLOUD_ASSETS } from '@/lib/cloudAssets';
 const logoVinFast = CLOUD_ASSETS.VINFAST_LOGO;
 import type { Role, UserAccount } from '@/types';
-
-declare global {
-  interface Window {
-    google?: any;
-  }
-}
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -41,130 +35,6 @@ export default function AuthModal({
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
-
-  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
-
-  const handleGoogleCallback = async (response: any) => {
-    if (!response?.credential) return;
-    try {
-      setLoading(true);
-      setErrorMsg('');
-      const loginRes = await api.loginWithGoogle<{ access_token: string; user: any }>(response.credential);
-      localStorage.setItem('vinfast_token', loginRes.access_token);
-
-      const loggedUser: UserAccount = {
-        id: loginRes.user.id,
-        name: loginRes.user.full_name,
-        email: loginRes.user.email,
-        phone: loginRes.user.phone || '',
-        role: 'customer',
-        memberLevel: 'Standard',
-      };
-
-      localStorage.setItem('vinfast_user', JSON.stringify(loggedUser));
-      onLoginSuccess(loggedUser, loginRes.access_token);
-      setLoading(false);
-      onClose();
-    } catch (err: any) {
-      setLoading(false);
-      setErrorMsg(err.message || 'Đăng nhập bằng Google thất bại. Vui lòng thử lại!');
-    }
-  };
-
-  useEffect(() => {
-    if (!isOpen || !googleClientId) return;
-
-    const scriptId = 'google-gsi-script';
-    let script = document.getElementById(scriptId) as HTMLScriptElement | null;
-
-    const initGsi = () => {
-      if (window.google?.accounts?.id) {
-        try {
-          window.google.accounts.id.initialize({
-            client_id: googleClientId,
-            callback: handleGoogleCallback,
-            auto_select: false,
-          });
-        } catch (e) {
-          console.warn('GSI initialize warning:', e);
-        }
-      }
-    };
-
-    if (!script) {
-      script = document.createElement('script');
-      script.id = scriptId;
-      script.src = 'https://accounts.google.com/gsi/client';
-      script.async = true;
-      script.defer = true;
-      script.onload = initGsi;
-      document.head.appendChild(script);
-    } else {
-      initGsi();
-    }
-  }, [isOpen, googleClientId]);
-
-  const handleGoogleLoginClick = () => {
-    setErrorMsg('');
-    if (googleClientId && window.google?.accounts?.oauth2) {
-      try {
-        const tokenClient = window.google.accounts.oauth2.initTokenClient({
-          client_id: googleClientId,
-          scope: 'openid email profile',
-          callback: async (tokenResponse: any) => {
-            if (tokenResponse.error) {
-              console.warn('Google login cancelled:', tokenResponse);
-              return;
-            }
-            if (tokenResponse.access_token) {
-              try {
-                setLoading(true);
-                const loginRes = await api.loginWithGoogle<{ access_token: string; user: any }>(tokenResponse.access_token);
-                localStorage.setItem('vinfast_token', loginRes.access_token);
-
-                const loggedUser: UserAccount = {
-                  id: loginRes.user.id,
-                  name: loginRes.user.full_name,
-                  email: loginRes.user.email,
-                  phone: loginRes.user.phone || '',
-                  role: 'customer',
-                  memberLevel: 'Standard',
-                };
-
-                localStorage.setItem('vinfast_user', JSON.stringify(loggedUser));
-                onLoginSuccess(loggedUser, loginRes.access_token);
-                setLoading(false);
-                onClose();
-              } catch (err: any) {
-                setLoading(false);
-                setErrorMsg(err.message || 'Đăng nhập bằng Google thất bại. Vui lòng thử lại!');
-              }
-            }
-          },
-        });
-        tokenClient.requestAccessToken();
-      } catch (err) {
-        console.error('Google OAuth client error:', err);
-        if (window.google?.accounts?.id) {
-          window.google.accounts.id.prompt();
-        }
-      }
-    } else if (googleClientId && window.google?.accounts?.id) {
-      window.google.accounts.id.prompt();
-    } else {
-      // Demo mock fallback if Google GSI is unavailable
-      onLoginSuccess({
-        id: `usr_${Date.now()}`,
-        name: 'Khách hàng VinFast',
-        email: 'user.google@vinfast.vn',
-        phone: '0901 234 567',
-        role: 'customer',
-        memberLevel: 'Standard',
-      });
-      onClose();
-    }
-  };
-
 
   if (!isOpen) return null;
 
@@ -514,29 +384,6 @@ export default function AuthModal({
               )}
             </button>
           </form>
-
-          {/* Social Auth Footer for Customers */}
-          {authMode === 'login' && (
-            <div className="pt-4 border-t border-slate-100">
-              <div className="text-center text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">
-                Hoặc Đăng nhập nhanh bằng Google
-              </div>
-              <button
-                type="button"
-                onClick={handleGoogleLoginClick}
-                className="w-full flex items-center justify-center gap-3 py-3 px-4 border border-slate-200 rounded-2xl hover:bg-slate-50 hover:border-slate-300 text-xs font-extrabold text-slate-700 transition-all shadow-sm active:scale-[0.99]"
-              >
-                <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
-                  <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z" />
-                  <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.15C3.26 21.3 7.36 24 12 24z" />
-                  <path fill="#FBBC05" d="M5.28 14.24c-.25-.72-.38-1.49-.38-2.24s.13-1.52.38-2.24V6.61H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.39l3.99-3.15z" />
-                  <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.36 0 3.26 2.7 1.29 6.61l3.99 3.15c.95-2.85 3.6-4.96 6.72-4.96z" />
-                </svg>
-                <span>Đăng nhập với Google</span>
-              </button>
-            </div>
-          )}
-
 
           <div className="text-center pt-2">
             <p className="text-[10px] text-slate-400 font-bold flex items-center justify-center gap-1">

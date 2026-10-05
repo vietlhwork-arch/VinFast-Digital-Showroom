@@ -378,14 +378,14 @@ export default function VehicleShowcase({
           </div>
           <div className="relative text-center sm:text-left">
             <h3 className="text-xl sm:text-2xl font-bold text-white mb-1">Chưa biết chọn xe nào?</h3>
-            <p className="text-blue-200 text-sm">Trợ lý AI của chúng tôi sẽ tư vấn xe phù hợp với nhu cầu và ngân sách của bạn</p>
+            <p className="text-blue-200 text-sm">Nhân viên showroom sẽ hỗ trợ trực tiếp theo nhu cầu và ngân sách của bạn</p>
           </div>
           <div className="relative flex gap-3 flex-shrink-0 flex-wrap justify-center sm:justify-start">
             <button
               onClick={onOpenChat}
               className="px-6 py-3 bg-white text-blue-800 text-sm font-bold rounded-xl hover:bg-blue-50 transition-all hover:scale-105 shadow-md active:scale-95 cursor-pointer"
             >
-              Tư vấn AI ngay
+              Chat với nhân viên
             </button>
             <button
               onClick={() => onOpenTestDrive?.(null)}

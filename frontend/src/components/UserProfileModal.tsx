@@ -434,7 +434,7 @@ export default function UserProfileModal({
                       className="mt-3 px-3.5 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
                     >
                       <Car size={14} />
-                      Tư vấn mua xe với AI Advisor ngay
+                      Chat trực tiếp với nhân viên tư vấn
                     </button>
                   )}
                 </div>

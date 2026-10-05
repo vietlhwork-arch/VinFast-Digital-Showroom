@@ -48,7 +48,7 @@ export interface Quote {
   base_price: number;
   discount: number;
   final_price: number;
-  ai_summary?: string;
+  request_note?: string;
   status: 'pending' | 'approved' | 'rejected';
   notes?: string;
   created_at: string;
@@ -67,36 +67,6 @@ export interface TestDriveBooking {
   notes?: string;
   created_at: string;
 }
-
-export interface ChatMessageAction {
-  type: string;
-  vehicle_id?: string;
-  vehicle_name?: string;
-  base_price?: number;
-  status?: 'idle' | 'loading' | 'success' | 'error';
-  [key: string]: any;
-}
-
-export interface ChatMessage {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  timestamp: Date;
-  isStreaming?: boolean;
-  statusText?: string;
-  action?: ChatMessageAction;
-}
-
-export type ChatStage =
-  | 'greeting'
-  | 'asking_budget'
-  | 'asking_usage'
-  | 'recommendation'
-  | 'asking_quote'
-  | 'collecting_name'
-  | 'collecting_phone'
-  | 'quote_saved'
-  | 'free';
 
 export interface UserAccount {
   id: string;

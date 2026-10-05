@@ -1,6 +1,6 @@
 import blobMapping from './blob_mapping.json';
 
-const getApiUrl = () => {
+export const getApiUrl = () => {
   if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
   if (import.meta.env.PROD) return '';
   return 'http://127.0.0.1:8000';
@@ -34,12 +34,13 @@ export async function apiFetch<T>(path: string, options?: RequestInit): Promise<
     if (path.includes('/api/auth')) clearApiCache('/api/auth');
     if (path.includes('/api/quotes')) clearApiCache('/api/quotes');
     if (path.includes('/api/bookings')) clearApiCache('/api/bookings');
+    if (path.includes('/api/conversations')) clearApiCache('/api/conversations');
   }
 
   const cacheKey = `${path}_${localStorage.getItem('vinfast_token') || ''}`;
 
   // Do not cache real-time quotes, bookings, and location APIs
-  const isRealtimePath = path.includes('/api/quotes') || path.includes('/api/bookings') || path.includes('/api/locations');
+  const isRealtimePath = path.includes('/api/quotes') || path.includes('/api/bookings') || path.includes('/api/locations') || path.includes('/api/conversations');
 
   if (isGet && !isRealtimePath) {
     const cached = getCache.get(cacheKey);
@@ -232,7 +233,6 @@ export const api = {
   // Auth & Admin User Management APIs
   register: <T>(payload: any) => apiFetch<T>('/api/auth/register', { method: 'POST', body: JSON.stringify(payload) }),
   login: <T>(payload: any) => apiFetch<T>('/api/auth/login', { method: 'POST', body: JSON.stringify(payload) }),
-  loginWithGoogle: <T>(idToken: string) => apiFetch<T>('/api/auth/google', { method: 'POST', body: JSON.stringify({ id_token: idToken }) }),
   getMe: <T>() => apiFetch<T>('/api/auth/me'),
   updateMe: <T>(payload: any) => apiFetch<T>('/api/auth/me', { method: 'PUT', body: JSON.stringify(payload) }),
   getUsers: <T>() => apiFetch<T>('/api/auth/users'),
@@ -290,112 +290,30 @@ export const api = {
     return res;
   },
 
-  // AI Agent Chat API
-  chat: <T>(payload: { message: string; session_id?: string; user_id?: string; user_email?: string }) =>
-    apiFetch<T>('/api/chat', { method: 'POST', body: JSON.stringify(payload) }),
-  chatStream: async (
-    payload: { message: string; session_id?: string; user_id?: string; user_email?: string },
-    onToken: (token: string) => void,
-    onDone?: (data: { stage?: string; session_id?: string; action?: any; updated_user?: { phone?: string } }) => void,
-    onStatus?: (status: string) => void
-  ) => {
-    const baseUrl = getApiUrl();
-    const token = localStorage.getItem('vinfast_token');
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    const response = await fetch(`${baseUrl}/api/chat`, {
+  // Human support chat
+  getConversations: <T>() => apiFetch<T>('/api/conversations'),
+  createConversation: <T>(subject: string) =>
+    apiFetch<T>('/api/conversations', { method: 'POST', body: JSON.stringify({ subject }) }),
+  getConversationMessages: <T>(conversationId: string) =>
+    apiFetch<T>(`/api/conversations/${conversationId}/messages`),
+  sendConversationMessage: <T>(conversationId: string, content: string) =>
+    apiFetch<T>(`/api/conversations/${conversationId}/messages`, {
       method: 'POST',
-      headers,
-      body: JSON.stringify({ ...payload, stream: true }),
-    });
-
-    if (!response.ok || !response.body) {
-      throw new Error(`HTTP error ${response.status}`);
-    }
-
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder('utf-8');
-    let done = false;
-    let buffer = '';
-
-    while (!done) {
-      const { value, done: readerDone } = await reader.read();
-      done = readerDone;
-      if (value) {
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split(/\r?\n/);
-        buffer = lines.pop() || '';
-
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (trimmed.startsWith('data:')) {
-            const jsonStr = trimmed.replace(/^data:\s*/, '');
-            if (!jsonStr) continue;
-            let data: any;
-            try {
-              data = JSON.parse(jsonStr);
-            } catch {
-              continue;
-            }
-
-            if (data.status && onStatus) {
-              onStatus(data.status);
-            }
-            if (data.token !== undefined) {
-              onToken(data.token);
-            }
-            if (data.done && onDone) {
-              onDone(data);
-            }
-            if (data.error) {
-              throw new Error(data.error);
-            }
-          }
-        }
-      }
-    }
-  },
-  bindUserSession: <T>(payload: { session_id: string; user_id: string }) =>
-    apiFetch<T>('/api/chat/session/bind-user', { method: 'POST', body: JSON.stringify(payload) }),
-  endChatSession: <T>(payload: { session_id: string; user_id?: string }) =>
-    apiFetch<T>('/api/chat/session/end', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-      keepalive: true,
+      body: JSON.stringify({ content }),
     }),
+  assignConversation: <T>(conversationId: string) =>
+    apiFetch<T>(`/api/conversations/${conversationId}/assign`, { method: 'POST' }),
+  closeConversation: <T>(conversationId: string) =>
+    apiFetch<T>(`/api/conversations/${conversationId}/close`, { method: 'POST' }),
+  deleteConversation: <T>(conversationId: string) =>
+    apiFetch<T>(`/api/conversations/${conversationId}`, { method: 'DELETE' }),
 };
 
-export function endChatSessionOnPageHide(payload: {
-  session_id: string;
-  user_id?: string;
-}): boolean {
-  const url = `${getApiUrl()}/api/chat/session/page-close`;
-  const body = JSON.stringify(payload);
-
-  try {
-    if (typeof navigator.sendBeacon === 'function') {
-      const queued = navigator.sendBeacon(
-        url,
-        new Blob([body], { type: 'text/plain;charset=UTF-8' }),
-      );
-      if (queued) return true;
-    }
-
-    void fetch(url, {
-      method: 'POST',
-      body,
-      keepalive: true,
-      headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
-    }).catch(() => undefined);
-    return true;
-  } catch {
-    return false;
-  }
+export function getConversationSocketUrl(conversationId: string): string {
+  const token = localStorage.getItem('vinfast_token') || '';
+  const base = getApiUrl() || window.location.origin;
+  const websocketBase = base.replace(/^http:/, 'ws:').replace(/^https:/, 'wss:');
+  return `${websocketBase}/api/conversations/${conversationId}/ws?token=${encodeURIComponent(token)}`;
 }
 
 

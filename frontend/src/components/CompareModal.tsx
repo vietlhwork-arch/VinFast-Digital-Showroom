@@ -423,7 +423,7 @@ export default function CompareModal({
                     className="px-6 py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm rounded-xl shadow-2xl transition-all inline-flex items-center gap-2 hover:scale-105 active:scale-95 cursor-pointer"
                   >
                     <MessageSquare size={16} />
-                    <span>Hỏi AI Advisor</span>
+                    <span>Hỏi nhân viên tư vấn</span>
                   </button>
                 </div>
               )}

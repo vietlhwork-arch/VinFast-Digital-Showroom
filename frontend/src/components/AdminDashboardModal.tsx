@@ -9,7 +9,6 @@ import {
   XCircle, RefreshCw, ShieldCheck, Search, Loader2, UserPlus, Phone, Mail, Award, Lock, Upload, ArrowRight, Download, Zap, AlertTriangle, Eye
 } from 'lucide-react';
 import { api, getImageUrl, formatVNDPrice, parseVehicleCategory } from '@/lib/api';
-import { supabase } from '@/lib/supabase';
 
 interface AdminDashboardModalProps {
   open: boolean;
@@ -1156,28 +1155,9 @@ export default function AdminDashboardModal({ open, onClose }: AdminDashboardMod
     try {
       setLoading(true);
       const payload = { status, updated_at: new Date().toISOString() };
-      let updated = false;
-
-      try {
-        await api.updateQuoteStatus(quoteId, payload);
-        updated = true;
-      } catch (err) {
-        console.warn('[AdminDashboard] API updateQuoteStatus failed, syncing Supabase directly:', err);
-      }
-
-      try {
-        const { error } = await supabase.from('quotes').update(payload).eq('id', quoteId);
-        if (!error) updated = true;
-      } catch (err) {
-        console.warn('[AdminDashboard] Supabase update failed:', err);
-      }
-
-      if (updated) {
-        setMsg(`Đã cập nhật trạng thái báo giá thành: ${status === 'approved' ? '🟢 Đã duyệt' : status === 'rejected' ? '🔴 Từ chối' : status}`);
-        fetchData();
-      } else {
-        setMsg('Cập nhật báo giá thất bại. Vui lòng kiểm tra lại quyền hạn.');
-      }
+      await api.updateQuoteStatus(quoteId, payload);
+      setMsg(`Đã cập nhật trạng thái báo giá thành: ${status === 'approved' ? '🟢 Đã duyệt' : status === 'rejected' ? '🔴 Từ chối' : status}`);
+      fetchData();
     } catch (err: any) {
       setMsg(err.message || 'Cập nhật báo giá thất bại.');
     } finally {
@@ -1783,7 +1763,7 @@ export default function AdminDashboardModal({ open, onClose }: AdminDashboardMod
                       <Zap className="text-amber-500 fill-amber-500" size={18} />
                       <span>Catalog Xe Máy Điện VinFast ({motorbikes.length})</span>
                     </h3>
-                    <p className="text-xs text-slate-500">Quản lý 15 mẫu xe máy điện thông minh, giá niêm yết & tóm tắt RAG</p>
+                    <p className="text-xs text-slate-500">Quản lý mẫu xe máy điện, giá niêm yết và thông số kỹ thuật</p>
                   </div>
                   <button
                     onClick={() => {

@@ -777,7 +777,7 @@ export default function VehicleDetailModal({
                   className="py-3 px-3 rounded-2xl bg-slate-950 hover:bg-slate-900 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm active:scale-[0.98]"
                 >
                   <MessageSquare size={16} className="text-blue-400" />
-                  <span>Hỏi AI tư vấn</span>
+                  <span>Chat với nhân viên</span>
                 </button>
 
                 <button

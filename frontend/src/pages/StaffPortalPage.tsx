@@ -6,7 +6,6 @@ import {
   Edit3, RotateCcw, Sliders, Trash2, Check, ArrowLeft,
   Sparkles, Tag, Layers, MapPin, Receipt
 } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
 import { api, formatVNDPrice } from '@/lib/api';
 import type { Quote } from '@/types';
 import QuoteTCOInvoice, {
@@ -612,24 +611,15 @@ export default function StaffPortalPage({ onBackToHome }: StaffPortalPageProps) 
       updated_at: new Date().toISOString(),
     };
 
-    let updateSuccess = false;
-
     try {
       await api.updateQuoteStatus(id, payload);
-      updateSuccess = true;
     } catch (e) {
-      console.warn('FastAPI backend error, falling back to Supabase direct:', e);
+      setToastMsg({ text: e instanceof Error ? e.message : 'Không thể cập nhật báo giá.', type: 'error' });
+      setUpdatingAction(null);
+      return;
     }
 
-    try {
-      const { error } = await supabase.from('quotes').update(payload).eq('id', id);
-      if (!error) updateSuccess = true;
-    } catch (err) {
-      console.warn('Supabase direct error:', err);
-    }
-
-    if (updateSuccess) {
-      setQuotes((prev) =>
+    setQuotes((prev) =>
         prev.map((q) =>
           q.id === id
             ? {
@@ -658,13 +648,7 @@ export default function StaffPortalPage({ onBackToHome }: StaffPortalPageProps) 
         });
       }
 
-      setEditingQuoteId(null);
-    } else {
-      setToastMsg({
-        text: '❌ Cập nhật thất bại. Vui lòng kiểm tra lại kết nối mạng.',
-        type: 'error',
-      });
-    }
+    setEditingQuoteId(null);
 
     setUpdatingAction(null);
   }
@@ -1567,7 +1551,7 @@ export default function StaffPortalPage({ onBackToHome }: StaffPortalPageProps) 
             <div className="bg-white border border-slate-200 rounded-3xl p-12 text-center text-slate-400 space-y-3 shadow-sm">
               <Calendar size={48} className="mx-auto text-slate-300" />
               <h3 className="text-base font-bold text-slate-700">Không có lịch hẹn lái thử nào</h3>
-              <p className="text-xs text-slate-500">Lịch đăng ký lái thử trực tuyến và qua AI sẽ hiển thị ở đây.</p>
+              <p className="text-xs text-slate-500">Lịch đăng ký lái thử trực tuyến sẽ hiển thị ở đây.</p>
             </div>
           ) : (
             <div className="space-y-4">
