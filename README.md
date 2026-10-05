@@ -1,134 +1,146 @@
 # VinFast Digital Showroom
 
-Nền tảng showroom số và bán hàng O2O (Online-to-Offline) dành cho hệ sinh thái xe điện VinFast. Hệ thống kết nối hành trình khám phá xe trực tuyến với báo giá, đặt lịch lái thử, chăm sóc khách hàng và vận hành CRM tại showroom.
+Ứng dụng showroom số gồm danh mục ô tô/xe máy điện, yêu cầu báo giá, đặt lịch lái thử, CRM gọn nhẹ và chat thời gian thực giữa khách hàng với nhân viên. Sản phẩm không dùng chatbot, mô hình ngôn ngữ, vector database hoặc API key của bên thứ ba.
 
-> Đây là dự án học tập/trình diễn độc lập, không phải sản phẩm chính thức của VinFast.
+## Phạm vi sản phẩm
 
-## Chức năng chính
+Ba vai trò được hỗ trợ:
 
-- Danh mục ô tô và xe máy điện, hiển thị phiên bản, màu sắc và thông số kỹ thuật.
-- So sánh trực quan 2–3 mẫu xe và làm nổi bật ưu điểm của từng mẫu.
-- Tính chi phí lăn bánh và tổng chi phí sở hữu (TCO) theo nhu cầu sử dụng.
-- Tra cứu showroom và trạm sạc theo tỉnh/thành.
-- Gửi yêu cầu báo giá và đặt lịch lái thử.
-- Tài khoản theo vai trò `customer`, `consultant` và `admin`.
-- CRM quản lý hồ sơ khách hàng, nhu cầu, báo giá và lịch hẹn.
-- Trợ lý tư vấn tích hợp LangGraph và RAG (tính năng mở rộng của showroom số).
+- `customer`: xem xe, so sánh, tính chi phí sở hữu, tạo báo giá/lịch lái thử và chat với nhân viên.
+- `consultant`: xử lý báo giá, lịch lái thử, hồ sơ khách hàng và hàng đợi hội thoại.
+- `admin`: toàn bộ quyền của nhân viên, quản lý tài khoản và dữ liệu danh mục.
+
+Chat hỗ trợ được lưu trong database. REST API dùng để tải lịch sử và gửi tin tin cậy; WebSocket phát sự kiện mới theo thời gian thực. Pha 1 dùng bộ quản lý kết nối trong một process, phù hợp demo và kiểm thử trên một máy.
+
+## Kiến trúc
+
+```text
+React/Vite UI
+    │  JSON/REST + WebSocket
+    ▼
+FastAPI API layer          src/api/
+    │  gọi use case
+    ▼
+Business layer             src/services/support_chat.py
+    │  ConversationRepository (Protocol)
+    ▼
+Data access layer          src/repositories/support_chat.py
+    │
+    ▼
+SQLAlchemy → SQLite hoặc PostgreSQL
+```
+
+`SupportChatService` là lõi nghiệp vụ của phạm vi mới. Module này không import FastAPI hoặc SQLAlchemy; kiểm thử unit chạy với repository in-memory. Xác thực JWT và phân quyền được đặt tại dependency dùng chung, không lặp logic đọc token trong từng endpoint.
+
+Chi tiết quyết định kiến trúc: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Công nghệ
 
-| Thành phần | Công nghệ |
-| --- | --- |
-| Frontend | React 18, TypeScript, Vite, Tailwind CSS |
-| Backend | FastAPI, Python, Pydantic |
-| Database | SQLAlchemy Async, SQLite/PostgreSQL, Supabase |
-| Authentication | JWT, phân quyền theo vai trò |
-| AI/RAG | LangGraph, LangChain, OpenAI/Google GenAI, pgvector |
-| Triển khai | Docker, Vercel, Render |
+- Backend: Python 3.10+, FastAPI, Pydantic, SQLAlchemy async.
+- Database: SQLite cho phát triển; PostgreSQL qua `asyncpg` cho môi trường dùng chung.
+- Frontend: React 18, TypeScript, Vite, Tailwind CSS.
+- Realtime: WebSocket của FastAPI.
+- Kiểm thử: pytest, pytest-asyncio, HTTPX.
+- Đóng gói: Docker multi-stage, chạy bằng user không phải root.
 
-## Cấu trúc dự án
+## Chạy local
 
-```text
-.
-├── frontend/            # Ứng dụng React/Vite
-├── src/
-│   ├── agents/          # Luồng trợ lý tư vấn LangGraph
-│   ├── api/             # REST API FastAPI
-│   ├── models/          # Pydantic schema và SQLAlchemy model
-│   └── services/        # Nghiệp vụ, database, RAG và TCO
-├── tests/               # Unit và integration tests
-├── eval/                # Kịch bản benchmark/evaluation
-├── docs/                # Tài liệu kỹ thuật
-├── scripts/             # Script thiết lập và dữ liệu
-├── Dockerfile
-└── docker-compose.yml
-```
-
-## Chạy bằng Docker
-
-Yêu cầu: Docker Desktop và một file `.env` được tạo từ `.env.example`.
-
-```bash
-docker compose up --build -d
-```
-
-Sau khi khởi động:
-
-- Web app: <http://localhost:8000>
-- Swagger UI: <http://localhost:8000/docs>
-- OpenAPI JSON: <http://localhost:8000/openapi.json>
-- Health check: <http://localhost:8000/health>
-
-## Chạy ở chế độ phát triển
-
-Yêu cầu: Python 3.11 trở lên và Node.js 18 trở lên.
-
-### Backend
+Backend:
 
 ```powershell
+Copy-Item .env.example .env
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-Copy-Item .env.example .env
+python scripts/seed_catalog_from_frontend.py
 uvicorn src.main:app --reload --port 8000
 ```
 
-### Frontend
-
-Mở terminal khác:
+Frontend ở terminal khác:
 
 ```powershell
-Set-Location frontend
+cd frontend
 npm install
 npm run dev
 ```
 
-Frontend chạy tại <http://localhost:5173> và backend tại <http://localhost:8000>.
+Mở `http://localhost:5173`. Swagger UI ở `http://localhost:8000/docs`, OpenAPI JSON ở `http://localhost:8000/openapi.json`.
 
-## Cấu hình môi trường
+Tài khoản demo được tạo tự động nếu chưa tồn tại:
 
-Sao chép `.env.example` thành `.env`, sau đó điền các giá trị phù hợp. Không commit file `.env` hoặc khóa bí mật lên Git.
+| Vai trò | Email | Mật khẩu |
+|---|---|---|
+| Admin | `admin@vinfast.vn` | `admin123` |
+| Nhân viên | `staff@vinfast.vn` | `staff123` |
+| Khách hàng | `customer@gmail.com` | `123456` |
 
-Các nhóm biến quan trọng:
+Các mật khẩu trên chỉ dùng cho local/demo. Đặt `APP_ENV=production` và thay `SECRET_KEY` bằng chuỗi ngẫu nhiên dài khi triển khai.
 
-- `DATABASE_URL`: kết nối SQLite/PostgreSQL.
-- `SECRET_KEY`: khóa ký JWT; bắt buộc thay bằng giá trị mạnh khi triển khai.
-- `CORS_ORIGINS`: danh sách origin được phép gọi API.
-- `SUPABASE_URL`, `SUPABASE_KEY`: kết nối Supabase nếu sử dụng.
-- `OPENAI_API_KEY`: chỉ cần khi bật tính năng trợ lý tư vấn.
-- `LANGSMITH_*`: cấu hình tracing tùy chọn.
+## PostgreSQL
 
-## API
+Đặt URL async trong `.env`, không commit thông tin xác thực:
 
-Base URL được khuyến nghị là `http://localhost:8000/api/v1`. Hệ thống hiện cũng duy trì alias `/api` để tương thích với frontend và client cũ.
+```dotenv
+DATABASE_URL=postgresql+asyncpg://user:password@host:5432/database
+```
 
-Các nhóm endpoint gồm:
+Ứng dụng tự tạo các bảng còn thiếu khi khởi động. Script seed catalog dùng upsert, không xóa dữ liệu đã có:
 
-- `/auth`: đăng ký, đăng nhập và quản lý tài khoản.
-- `/cars`, `/motorbikes`: danh mục và quản trị phương tiện.
-- `/locations`: showroom và trạm sạc.
-- `/tco`: tính chi phí sở hữu.
-- `/quotes`, `/bookings`: báo giá và lịch lái thử.
-- `/customer-profiles`, `/crm/profiles`: hồ sơ khách hàng và CRM.
-- `/chat`: trợ lý tư vấn tích hợp.
+```powershell
+python scripts/seed_catalog_from_frontend.py
+```
 
-Xem bảng endpoint, quyền truy cập, tham số và ví dụ request tại [docs/API.md](docs/API.md).
+## Docker
 
-## Kiểm thử
+```powershell
+docker compose up --build
+```
+
+Container phục vụ cả API và frontend tại `http://localhost:8000`; dữ liệu SQLite được lưu ở `./data`. File `.env` là tùy chọn cho local nhưng bắt buộc phải cung cấp `SECRET_KEY` riêng khi đặt `APP_ENV=production`.
+
+## Kiểm thử và kiểm tra chất lượng
 
 ```powershell
 pytest -q
-Set-Location frontend
+cd frontend
 npm run typecheck
 npm run build
 ```
 
-## Thành viên
+Load test không cần cài thêm thư viện:
 
-- Lê Hoàng Việt
-- Hoàng Lê Minh
-- Nguyễn Văn A
+```powershell
+python scripts/load_test.py --base-url http://127.0.0.1:8000 --duration 120 --concurrency 20
+```
 
-## Repository
+Quy trình cố định cấu hình Kaggle CPU và cách báo cáo trước/sau nằm tại [docs/KAGGLE_LOAD_TEST.md](docs/KAGGLE_LOAD_TEST.md).
 
-<https://github.com/vietlhwork-arch/VinFast-Digital-Showroom>
+## Tài liệu
+
+- [Đặc tả API và WebSocket](docs/API.md)
+- [Kiến trúc và các thuộc tính chất lượng](docs/ARCHITECTURE.md)
+- [Kế hoạch Pha 1, Pha 2 và phân công nhóm](docs/PHASE_PLAN.md)
+- [Quy trình load test Kaggle](docs/KAGGLE_LOAD_TEST.md)
+
+Các tài liệu cũ trong `docs/GATE_1`, `docs/GATE_2` và `docs/guide` là tài liệu lưu trữ của phạm vi trước, không còn là đặc tả của sản phẩm hiện tại. Bốn tài liệu trên là nguồn chuẩn để phát triển và chấm bài.
+
+## Cấu trúc chính
+
+```text
+frontend/src/                 React UI
+src/api/                      HTTP/WebSocket adapters
+src/services/                 business use cases và dịch vụ ứng dụng
+src/repositories/             data-access adapters
+src/models/                   ORM models và API schemas
+tests/                        unit/integration tests
+scripts/                      seed dữ liệu và load test
+docs/                         tài liệu chuẩn của sản phẩm
+```
+
+## Nhóm phát triển
+
+- Lê Hoàng Việt — Lead, kiến trúc và tích hợp.
+- Hoàng Lê Minh — backend nghiệp vụ, dữ liệu và kiểm thử tải.
+- Nguyễn Văn Toán — realtime chat, frontend và kiểm thử luồng người dùng.
+
+Phân công theo deliverable và tiêu chí nghiệm thu được mô tả trong [docs/PHASE_PLAN.md](docs/PHASE_PLAN.md).

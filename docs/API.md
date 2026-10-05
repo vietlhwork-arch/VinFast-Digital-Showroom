@@ -1,173 +1,140 @@
-# Tài liệu API — VinFast Digital Showroom
+# Đặc tả API
 
-## Quy ước chung
+Base URL chuẩn: `/api/v1`. Dữ liệu HTTP dùng JSON, ngoại trừ API quản trị catalog nhận `multipart/form-data` để hỗ trợ tải ảnh. Swagger UI được sinh tự động tại `/docs`.
 
-- Base URL khuyến nghị: `http://localhost:8000/api/v1`
-- Alias tương thích: `http://localhost:8000/api`
-- Swagger UI: `http://localhost:8000/docs`
-- OpenAPI JSON: `http://localhost:8000/openapi.json`
-- Các request JSON sử dụng header `Content-Type: application/json`.
-- Endpoint được bảo vệ sử dụng header `Authorization: Bearer <access_token>`.
-- Các endpoint tạo/cập nhật phương tiện nhận `multipart/form-data` để hỗ trợ tải ảnh.
+## Xác thực
 
-### Vai trò
+Đăng nhập trả về JWT Bearer token:
 
-| Ký hiệu | Quyền |
-| --- | --- |
-| Public | Không yêu cầu đăng nhập |
-| Authenticated | Mọi tài khoản đã đăng nhập |
-| Consultant | Tư vấn viên hoặc quản trị viên |
-| Admin | Chỉ quản trị viên |
-
-## Hệ thống
-
-| Method | Endpoint | Quyền | Mô tả |
-| --- | --- | --- | --- |
-| `GET` | `/health` | Public | Kiểm tra trạng thái ứng dụng và kết nối database. Endpoint này nằm ở root, không có prefix `/api/v1`. |
-| `GET` | `/api/v1/status` | Public | Kiểm tra trạng thái pipeline trợ lý tư vấn. |
-| `POST` | `/api/v1/warmup` | Public | Khởi động nóng pipeline tư vấn ở background để giảm độ trễ request đầu tiên. |
-
-## Xác thực và tài khoản
-
-| Method | Endpoint | Quyền | Mô tả |
-| --- | --- | --- | --- |
-| `POST` | `/api/v1/auth/register` | Public | Tạo tài khoản khách hàng bằng email, số điện thoại, mật khẩu và họ tên. |
-| `POST` | `/api/v1/auth/login` | Public | Đăng nhập bằng email/mật khẩu và nhận JWT access token. |
-| `POST` | `/api/v1/auth/google` | Public | Đăng nhập hoặc tự động đăng ký bằng Google ID/access token. |
-| `GET` | `/api/v1/auth/me` | Authenticated | Lấy thông tin tài khoản hiện tại. |
-| `PUT` | `/api/v1/auth/me` | Authenticated | Cập nhật họ tên, số điện thoại hoặc mật khẩu của tài khoản hiện tại. |
-| `GET` | `/api/v1/auth/users` | Admin | Lấy danh sách tài khoản. |
-| `POST` | `/api/v1/auth/create-staff` | Admin | Tạo tài khoản nhân viên/tư vấn viên. |
-| `PUT` | `/api/v1/auth/users/{user_id}` | Owner/Admin | Chủ tài khoản cập nhật chính mình; admin có thể cập nhật vai trò và trạng thái. |
-| `DELETE` | `/api/v1/auth/users/{user_id}` | Admin | Xóa một tài khoản; admin không thể tự xóa tài khoản đang đăng nhập. |
-
-Ví dụ đăng nhập:
-
-```bash
-curl -X POST http://localhost:8000/api/v1/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"customer@example.com","password":"your-password"}'
+```http
+Authorization: Bearer <access_token>
 ```
 
-## Danh mục ô tô
+Middleware/dependency dùng chung đọc token, kiểm tra tài khoản còn hoạt động và áp dụng role. Client không được gửi `user_id`, tên hoặc số điện thoại để giả danh chủ thể; backend lấy danh tính từ token cho báo giá, lịch lái thử và hội thoại.
 
-| Method | Endpoint | Quyền | Mô tả |
-| --- | --- | --- | --- |
-| `GET` | `/api/v1/cars` | Public | Lấy danh sách ô tô; hỗ trợ query `category`. |
-| `GET` | `/api/v1/cars/{car_id_or_code}` | Public | Lấy một mẫu xe bằng UUID hoặc mã xe. |
-| `POST` | `/api/v1/cars` | Consultant | Tạo mẫu/phiên bản ô tô bằng `multipart/form-data`. |
-| `PUT` | `/api/v1/cars/{car_id}` | Consultant | Cập nhật dữ liệu và hình ảnh ô tô. |
-| `DELETE` | `/api/v1/cars/{car_id}` | Admin | Xóa một bản ghi ô tô. |
+Role trong backend:
 
-## Danh mục xe máy điện
+- `customer`: khách hàng.
+- `consultant`: nhân viên tư vấn; UI có thể hiển thị nhãn `staff`.
+- `admin`: quản trị viên.
 
-`/escooters` là alias của `/motorbikes`; hai đường dẫn trả về cùng tài nguyên.
+## Endpoint
 
-| Method | Endpoint | Quyền | Mô tả |
-| --- | --- | --- | --- |
-| `GET` | `/api/v1/motorbikes` | Public | Lấy danh sách xe máy điện; hỗ trợ query `category`. |
-| `GET` | `/api/v1/motorbikes/{motorbike_id_or_code}` | Public | Lấy xe máy điện bằng UUID hoặc mã xe. |
-| `POST` | `/api/v1/motorbikes` | Consultant | Tạo mẫu/phiên bản xe máy điện bằng `multipart/form-data`. |
-| `PUT` | `/api/v1/motorbikes/{motorbike_id}` | Consultant | Cập nhật dữ liệu và hình ảnh xe máy điện. |
-| `DELETE` | `/api/v1/motorbikes/{motorbike_id}` | Admin | Xóa một bản ghi xe máy điện. |
+Ký hiệu quyền: `Public`, `C` customer, `S` consultant, `A` admin, `Auth` mọi tài khoản đăng nhập.
 
-## Showroom và trạm sạc
+| Method | Path | Quyền | Mục đích |
+|---|---|---:|---|
+| GET | `/health` | Public | Kiểm tra API và database |
+| POST | `/api/v1/auth/register` | Public | Đăng ký customer |
+| POST | `/api/v1/auth/login` | Public | Nhận JWT |
+| GET | `/api/v1/auth/me` | Auth | Lấy tài khoản hiện tại |
+| PUT | `/api/v1/auth/me` | Auth | Sửa hồ sơ cá nhân |
+| GET | `/api/v1/auth/users` | A | Danh sách tài khoản |
+| POST | `/api/v1/auth/create-staff` | A | Tạo consultant/admin |
+| PUT | `/api/v1/auth/users/{id}` | Chủ tài khoản/A | Sửa tài khoản |
+| DELETE | `/api/v1/auth/users/{id}` | A | Xóa tài khoản |
+| GET | `/api/v1/cars` | Public | Danh sách ô tô |
+| GET | `/api/v1/cars/{id-or-code}` | Public | Chi tiết ô tô |
+| POST | `/api/v1/cars` | S/A | Tạo ô tô |
+| PUT | `/api/v1/cars/{id}` | S/A | Cập nhật ô tô |
+| DELETE | `/api/v1/cars/{id}` | A | Xóa ô tô |
+| GET | `/api/v1/motorbikes` | Public | Danh sách xe máy điện |
+| GET | `/api/v1/motorbikes/{id-or-code}` | Public | Chi tiết xe máy điện |
+| POST | `/api/v1/motorbikes` | S/A | Tạo xe máy điện |
+| PUT | `/api/v1/motorbikes/{id}` | S/A | Cập nhật xe máy điện |
+| DELETE | `/api/v1/motorbikes/{id}` | A | Xóa xe máy điện |
+| GET | `/api/v1/locations` | Public | Showroom/trạm sạc |
+| POST | `/api/v1/locations/sync` | A | Nạp lại dataset địa điểm |
+| POST | `/api/v1/tco/calculate` | Public | Tính chi phí sở hữu theo tham số |
+| GET | `/api/v1/quotes` | Auth | C xem của mình; S/A xem hàng đợi |
+| POST | `/api/v1/quotes` | Auth | Tạo yêu cầu báo giá cho chính mình |
+| PUT | `/api/v1/quotes/{id}` | S/A | Cập nhật trạng thái/giá cuối |
+| GET | `/api/v1/bookings` | Auth | C xem của mình; S/A xem hàng đợi |
+| POST | `/api/v1/bookings` | Auth | Đặt lịch lái thử cho chính mình |
+| PUT | `/api/v1/bookings/{id}` | S/A | Cập nhật trạng thái lịch |
+| GET | `/api/v1/customer-profiles/me` | Auth | Xem hồ sơ CRM của mình |
+| GET | `/api/v1/customer-profiles` | S/A | Tra cứu hồ sơ CRM |
+| GET | `/api/v1/customer-profiles/{id}` | S/A | Chi tiết hồ sơ CRM |
+| PUT | `/api/v1/customer-profiles/{id}` | S/A | Cập nhật lead/ghi chú thủ công |
+| POST | `/api/v1/conversations` | C | Mở hội thoại hỗ trợ |
+| GET | `/api/v1/conversations` | Auth | C xem của mình; S/A xem hàng đợi |
+| GET | `/api/v1/conversations/{id}/messages` | Thành viên/S/A | Lịch sử tin nhắn |
+| POST | `/api/v1/conversations/{id}/messages` | Thành viên/S/A | Gửi và phát tin nhắn |
+| POST | `/api/v1/conversations/{id}/assign` | S/A | Nhận xử lý hội thoại |
+| POST | `/api/v1/conversations/{id}/close` | Thành viên/S/A | Đóng hội thoại |
+| DELETE | `/api/v1/conversations/{id}` | Chủ sở hữu/A | Xóa hội thoại và tin nhắn |
 
-| Method | Endpoint | Quyền | Mô tả |
-| --- | --- | --- | --- |
-| `GET` | `/api/v1/locations` | Public | Tìm địa điểm; hỗ trợ `demand_type`, `province`, `search`, `skip`, `limit`. |
-| `POST` | `/api/v1/locations/sync` | Public | Đồng bộ lại tập dữ liệu showroom và trạm sạc vào database. |
+## Luồng hội thoại
 
-> Khi triển khai production, nên giới hạn endpoint `locations/sync` cho admin hoặc tác vụ nội bộ.
+Tạo hội thoại:
 
-## Tính TCO
+```http
+POST /api/v1/conversations
+Authorization: Bearer <customer-token>
+Content-Type: application/json
 
-| Method | Endpoint | Quyền | Mô tả |
-| --- | --- | --- | --- |
-| `POST` | `/api/v1/tco/calculate` | Public | Ước tính giá xe, chi phí lăn bánh và chi phí vận hành hằng tháng. |
-
-Ví dụ:
-
-```bash
-curl -X POST http://localhost:8000/api/v1/tco/calculate \
-  -H "Content-Type: application/json" \
-  -d '{
-    "vehicle_type": "CAR",
-    "model_id": "vf-5",
-    "province_code": "HCM",
-    "battery_option": "BUY",
-    "monthly_km_estimate": 1200,
-    "seat_count": 5
-  }'
+{"subject":"Đặt lịch lái thử VF 6"}
 ```
 
-Các giá trị chính:
+Gửi tin qua REST:
 
-- `vehicle_type`: `CAR` hoặc `MOTORBIKE`.
-- `province_code`: `HN`, `HCM` hoặc `OTHER`.
-- `battery_option`: `RENTAL` hoặc `BUY`.
-- Kết quả chỉ mang tính ước tính; báo giá thực tế cần được tư vấn viên xác nhận.
+```http
+POST /api/v1/conversations/{conversation_id}/messages
+Authorization: Bearer <token>
+Content-Type: application/json
 
-## Báo giá
-
-| Method | Endpoint | Quyền | Mô tả |
-| --- | --- | --- | --- |
-| `GET` | `/api/v1/quotes` | Public | Tra cứu báo giá; hỗ trợ lọc theo `user_id`, `email` hoặc `phone`. |
-| `POST` | `/api/v1/quotes` | Public | Tạo yêu cầu báo giá mới. |
-| `PUT` | `/api/v1/quotes/{quote_id}` | Consultant | Duyệt/từ chối, ghi chú, điều chỉnh giảm giá hoặc giá cuối. |
-
-## Lịch lái thử
-
-| Method | Endpoint | Quyền | Mô tả |
-| --- | --- | --- | --- |
-| `GET` | `/api/v1/bookings` | Public | Tra cứu lịch hẹn theo `phone`, `email` hoặc `status`. |
-| `POST` | `/api/v1/bookings` | Public | Tạo yêu cầu lái thử với ngày, giờ và mẫu xe mong muốn. |
-| `PUT` | `/api/v1/bookings/{booking_id}` | Consultant | Cập nhật trạng thái `pending`, `confirmed`, `completed` hoặc `cancelled`. |
-
-## CRM và hồ sơ khách hàng
-
-Hai prefix `/customer-profiles` và `/crm/profiles` ánh xạ tới cùng nhóm chức năng.
-
-| Method | Endpoint | Quyền | Mô tả |
-| --- | --- | --- | --- |
-| `GET` | `/api/v1/customer-profiles` | Consultant | Danh sách hồ sơ; lọc theo lead score, trạng thái, từ khóa và phân trang. |
-| `GET` | `/api/v1/customer-profiles/me` | Authenticated | Khách hàng xem hồ sơ của chính mình. |
-| `GET` | `/api/v1/customer-profiles/{profile_id}` | Consultant | Xem chi tiết hồ sơ khách hàng 360°. |
-| `PUT` | `/api/v1/customer-profiles/{profile_id}` | Consultant | Cập nhật trạng thái và thông tin hồ sơ. |
-| `GET` | `/api/v1/customer-profiles/user/{user_id}/demands` | Consultant | Lấy lịch sử các đợt nhu cầu tìm xe. |
-| `GET` | `/api/v1/customer-profiles/user/{user_id}/history` | Consultant | Lấy hồ sơ 360° kèm nhu cầu, báo giá và lịch lái thử. |
-
-## Trợ lý tư vấn tích hợp
-
-| Method | Endpoint | Quyền | Mô tả |
-| --- | --- | --- | --- |
-| `POST` | `/api/v1/chat` | Public | Gửi tin nhắn; trả JSON hoặc SSE khi `stream=true`. |
-| `POST` | `/api/v1/chat/session/end` | Public | Kết thúc phiên và hợp nhất/tóm tắt nhu cầu nếu có người dùng đăng nhập. |
-| `POST` | `/api/v1/chat/session/page-close` | Public | Kết thúc phiên qua `sendBeacon` khi người dùng đóng trang; trả `204`. |
-| `POST` | `/api/v1/chat/session/bind-user` | Public | Gắn phiên khách vãng lai vào tài khoản sau đăng nhập. |
-
-Ví dụ request không streaming:
-
-```bash
-curl -X POST http://localhost:8000/api/v1/chat \
-  -H "Content-Type: application/json" \
-  -d '{
-    "message": "Tôi muốn tìm xe 5 chỗ dưới 800 triệu",
-    "session_id": "demo-session-01",
-    "stream": false
-  }'
+{"content":"Tôi muốn lái thử vào sáng thứ Bảy."}
 ```
 
-## Mã phản hồi thường gặp
+Mở realtime channel:
 
-| HTTP status | Ý nghĩa |
-| --- | --- |
-| `200` | Request thành công. |
-| `201` | Tạo tài nguyên thành công. |
-| `204` | Thành công và không có response body. |
-| `400` | Dữ liệu hoặc nghiệp vụ không hợp lệ. |
-| `401` | Thiếu token hoặc token không hợp lệ. |
-| `403` | Tài khoản không có quyền thực hiện. |
-| `404` | Không tìm thấy tài nguyên. |
-| `422` | Request không đúng schema Pydantic. |
-| `500` | Lỗi nội bộ server. |
+```text
+ws://localhost:8000/api/v1/conversations/{conversation_id}/ws?token=<jwt>
+```
+
+Client gửi:
+
+```json
+{"content":"Nội dung tin nhắn"}
+```
+
+Server phát:
+
+```json
+{
+  "type": "message",
+  "message": {
+    "message_id": "uuid",
+    "conversation_id": "uuid",
+    "sender_id": "uuid",
+    "content": "Nội dung tin nhắn",
+    "sent_at": "2026-10-05T08:00:00Z",
+    "sender_name": "Tên người gửi",
+    "sender_role": "customer"
+  }
+}
+```
+
+Các event khác: `conversation_updated`, `conversation_deleted`, `error`. REST vẫn là đường gửi dự phòng nếu WebSocket mất kết nối.
+
+## Quy tắc nghiệp vụ chat
+
+- Chỉ customer được mở hội thoại; subject dài 3–160 ký tự.
+- Customer chỉ đọc hội thoại do mình sở hữu.
+- Consultant/admin xem hàng đợi; consultant phải nhận hội thoại trước khi trả lời và không thể giành hội thoại đã được người khác nhận.
+- Tin nhắn không rỗng, tối đa 2.000 ký tự, chỉ gửi khi trạng thái `open`.
+- Customer chủ sở hữu và admin được xóa. Xóa hội thoại xóa toàn bộ message liên quan.
+- WebSocket xác thực JWT trước khi `accept`; mã đóng `4401` cho token/tài khoản không hợp lệ và `4403` khi không có quyền.
+
+## Mã lỗi chung
+
+| HTTP | Ý nghĩa |
+|---:|---|
+| 400 | Dữ liệu xung đột hoặc thao tác không hợp lệ |
+| 401 | Thiếu, sai hoặc hết hạn token |
+| 403 | Đã đăng nhập nhưng không có quyền |
+| 404 | Không tìm thấy tài nguyên |
+| 422 | Payload không đạt validation/quy tắc nghiệp vụ |
+| 500 | Lỗi không dự kiến; không trả stack trace cho client |
+
+Schema chi tiết, ví dụ request và response luôn lấy từ `/openapi.json` để tránh tài liệu lệch mã nguồn.

@@ -5,17 +5,13 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
-    env_file:
-      - .env
     volumes:
       - ./src:/app/src
       - ./data:/app/data
       - ./static:/app/static
     environment:
       - APP_ENV=development
-      - REDIS_URL=redis://redis:6379/0
-    depends_on:
-      - redis
+      - DATABASE_URL=sqlite+aiosqlite:////app/data/vinfast.db
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
@@ -35,18 +31,7 @@ services:
       - ./frontend:/app
       - /app/node_modules
     command: sh -c "npm install && npm run dev"
-    env_file:
-      - .env
     environment:
-      - VITE_API_BASE_URL=http://localhost:8000
-      - VITE_GOOGLE_CLIENT_ID=265660946902-8if3atlteseccqu5dd5sssrcf3idpcql.apps.googleusercontent.com
-    restart: unless-stopped
-
-  redis:
-    image: redis/redis-stack-server:latest
-    container_name: p-101-redis
-    ports:
-      - "6379:6379"
-      - "8001:8001"
+      - VITE_API_URL=http://localhost:8000
     restart: unless-stopped
 

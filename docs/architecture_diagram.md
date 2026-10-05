@@ -1,38 +1,13 @@
-# Architecture Diagram
+# Sơ đồ kiến trúc
 
-## System Overview
-
-```mermaid
-graph TB
-    User([User]) --> UI[Frontend<br/>React/Next.js]
-    UI -->|REST API| API[FastAPI Backend]
-    API --> Agent[LangGraph Agent]
-    Agent --> LLM[LLM Service<br/>GPT-4o / Gemini]
-    Agent --> Tools[Agent Tools]
-    Tools --> DB[(Database)]
-    Agent --> VS[Vector Store<br/>ChromaDB]
-```
-
-## Agent Flow
+Tài liệu này được giữ làm đường dẫn tương thích. Sơ đồ và giải thích cập nhật nằm tại [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ```mermaid
-graph LR
-    START((Start)) --> Input[Parse Input]
-    Input --> Analyze[Analyze Query]
-    Analyze --> Decide{Need Tool?}
-    Decide -->|Yes| CallTool[Call Tool]
-    CallTool --> Analyze
-    Decide -->|No| Generate[Generate Response]
-    Generate --> END((End))
+flowchart LR
+    UI[React UI] -->|REST JSON| API[FastAPI adapters]
+    UI <-->|WebSocket| API
+    API --> SVC[Business services]
+    SVC --> PORT[Repository protocols]
+    PORT --> REPO[SQLAlchemy repositories]
+    REPO --> DB[(SQLite / PostgreSQL)]
 ```
-
-## Component Details
-
-| Component | Technology | Purpose |
-|-----------|-----------|---------|
-| Frontend | React/Next.js | User interface |
-| Backend | FastAPI | API server |
-| Agent | LangGraph | AI agent orchestration |
-| LLM | OpenAI/Gemini | Language model |
-| Database | PostgreSQL/SQLite | Data persistence |
-| Vector Store | ChromaDB | RAG / embeddings |
