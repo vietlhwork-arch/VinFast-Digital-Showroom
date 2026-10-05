@@ -4,11 +4,11 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.models.domain import TestDriveBooking, User
+from src.models.domain import Account, TestDriveBooking, User
 from src.models.schemas import BookingCreate, BookingResponse, BookingUpdateStatus
 from src.services.customer_profile_service import sync_from_test_drive_booking
 from src.services.database import get_db
-from src.services.security import require_roles
+from src.services.security import get_current_user, require_roles
 
 router = APIRouter()
 
@@ -47,14 +47,27 @@ async def get_bookings(
     phone: str | None = None,
     email: str | None = None,
     status: str | None = None,
+    current_user: Account = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    if current_user.role == "customer":
+        phone = current_user.phone
+        email = None
+        status = None
     return await list_bookings(db, phone=phone, email=email, booking_status=status)
 
 
 @router.post("", response_model=BookingResponse, status_code=status.HTTP_201_CREATED)
-async def post_booking(payload: BookingCreate, db: AsyncSession = Depends(get_db)):
-    return await create_booking(db, payload)
+async def post_booking(
+    payload: BookingCreate,
+    current_user: Account = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    owned_payload = payload.model_copy(update={
+        "customer_name": current_user.full_name,
+        "customer_phone": current_user.phone,
+    })
+    return await create_booking(db, owned_payload)
 
 
 @router.put("/{booking_id}", response_model=BookingResponse)

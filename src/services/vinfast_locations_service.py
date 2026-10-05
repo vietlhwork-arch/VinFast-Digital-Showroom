@@ -1,6 +1,6 @@
 import logging
 import random
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from sqlalchemy import func, or_, select
@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.models.domain import VinfastLocation
 
 logger = logging.getLogger(__name__)
+UTC = timezone.utc
 
 # ==============================================================================
 # HỆ THỐNG MẠNG LƯỚI SHOWROOM & TRẠM SẠC VINFAST / V-GREEN TOÀN QUỐC (63 TỈNH THÀNH)

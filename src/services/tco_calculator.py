@@ -1,8 +1,4 @@
-"""Deterministic Python TCO Calculator Tool.
-
-Calculates rolling costs (phí lăn bánh) and monthly operating costs for VinFast electric vehicles
-and e-scooters according to zero math hallucination rule (ADR 0003).
-"""
+"""Pure, deterministic total-cost-of-ownership calculator."""
 
 from typing import Any, Literal
 
@@ -53,80 +49,36 @@ class TCOCalculationResponse(BaseModel):
 DISCLAIMER_TEXT = "Mọi con số mang tính chất ước tính, vui lòng xác nhận báo giá chính thức với Tư vấn viên."
 PUBLIC_CHARGING_RATE_VND_PER_KWH = 3858
 
+# A deliberately small pricing baseline for the calculator. The API accepts
+# explicit overrides so catalog prices can be supplied without coupling this
+# business module to a database or web framework.
+TCO_BASELINES: dict[str, dict[str, Any]] = {
+    "vf3": {"code": "vf3", "base_price": 240_000_000, "battery_buy_price": 322_000_000, "seats": 4},
+    "vf5": {"code": "vf5", "base_price": 496_000_000, "battery_buy_price": 548_000_000, "seats": 5},
+    "vf6": {"code": "vf6", "base_price": 675_000_000, "seats": 5},
+    "vf7": {"code": "vf7", "base_price": 850_000_000, "seats": 5},
+    "vf8": {"code": "vf8", "base_price": 1_019_000_000, "seats": 5},
+    "vf9": {"code": "vf9", "base_price": 1_499_000_000, "seats": 7},
+    "limogreen": {"code": "limo-green", "base_price": 699_000_000, "seats": 7},
+    "felizs": {"code": "feliz-s", "base_price": 30_000_000, "seats": 2, "vehicle_type": "MOTORBIKE"},
+    "theons": {"code": "theon-s", "base_price": 63_000_000, "seats": 2, "vehicle_type": "MOTORBIKE"},
+}
+
 
 def _find_vehicle_in_catalog(
     model_id: str,
     variant_id: str | None = None,
 ) -> tuple[dict[str, Any] | None, bool]:
-    """Dynamically query catalog cache (backed by Supabase DB) for vehicle specs.
-
-    Returns:
-        tuple[vehicle_record_dict or None, is_car_boolean]
-    """
-    from src.services.catalog_service import (
-        _normalize_model_key,
-        fetch_cars_from_supabase,
-        fetch_motorbikes_from_supabase,
-        get_dynamic_model_keyword_map,
-    )
-
-    m_clean = str(model_id or "").lower().strip()
-    if not m_clean:
+    del variant_id
+    normalized = "".join(character for character in str(model_id).lower() if character.isalnum())
+    vehicle = TCO_BASELINES.get(normalized)
+    if vehicle is None:
         return None, True
-
-    # 1. Resolve canonical alias dynamically from catalog DB records
-    key_map = get_dynamic_model_keyword_map()
-    canonical = key_map.get(m_clean) or key_map.get(_normalize_model_key(m_clean))
-
-    # 2. Query target_model in cars
-    cars = fetch_cars_from_supabase(target_model=canonical or m_clean)
-    if cars:
-        if variant_id:
-            v_match = [c for c in cars if str(c.get("id", "")).lower() == variant_id.lower() or str(c.get("code", "")).lower() == variant_id.lower()]
-            if v_match:
-                return v_match[0], True
-        return cars[0], True
-
-    # 3. Query target_model in motorbikes
-    bikes = fetch_motorbikes_from_supabase(target_model=canonical or m_clean)
-    if bikes:
-        return bikes[0], False
-
-    # 4. Normalized full scan across all cars
-    norm = _normalize_model_key(m_clean)
-    cars_all = fetch_cars_from_supabase()
-    for c in cars_all:
-        if norm == _normalize_model_key(c.get("code", "")) or norm == _normalize_model_key(c.get("name", "")):
-            return c, True
-
-    # 5. Normalized full scan across all motorbikes
-    bikes_all = fetch_motorbikes_from_supabase()
-    for b in bikes_all:
-        if norm == _normalize_model_key(b.get("code", "")) or norm == _normalize_model_key(b.get("name", "")):
-            return b, False
-
-    # 6. Base-prefix fuzzy matching (stripping trim suffixes: -plus, -eco, -s, -s2, 200, etc.)
-    base_prefix = norm
-    for suffix in ("s2", "s", "200", "lite", "plus", "eco", "green"):
-        if base_prefix.endswith(suffix):
-            trimmed = base_prefix[:-len(suffix)].strip()
-            if len(trimmed) >= 3:
-                base_prefix = trimmed
-                break
-
-    if len(base_prefix) >= 3:
-        for b in bikes_all:
-            if base_prefix in _normalize_model_key(b.get("code", "")) or base_prefix in _normalize_model_key(b.get("name", "")):
-                return b, False
-        for c in cars_all:
-            if base_prefix in _normalize_model_key(c.get("code", "")) or base_prefix in _normalize_model_key(c.get("name", "")):
-                return c, True
-
-    return None, True
+    return vehicle, vehicle.get("vehicle_type", "CAR") == "CAR"
 
 
 def calculate_tco(req: TCOCalculationRequest) -> TCOCalculationResponse:
-    """Calculate deterministic rolling cost and monthly operating cost directly from database."""
+    """Calculate deterministic rolling and monthly operating costs."""
     vehicle, is_car = _find_vehicle_in_catalog(req.model_id, req.variant_id)
 
     # Determine vehicle type

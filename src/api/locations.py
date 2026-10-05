@@ -3,7 +3,9 @@ from typing import Any
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.models.domain import Account
 from src.services.database import get_db
+from src.services.security import require_roles
 from src.services.vinfast_locations_service import (
     get_all_locations,
     sync_vinfast_locations_dataset,
@@ -31,7 +33,10 @@ async def list_locations(
 
 
 @router.post("/sync", response_model=dict[str, Any])
-async def sync_locations(db: AsyncSession = Depends(get_db)):
+async def sync_locations(
+    current_user: Account = Depends(require_roles(["admin"])),
+    db: AsyncSession = Depends(get_db),
+):
     """
     Đồng bộ lại tập dữ liệu Showroom & Trạm sạc VinFast chính xác vào Database.
     """

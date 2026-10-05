@@ -4,19 +4,13 @@ import re
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.domain import Account, MotorbikeCatalog
 from src.models.schemas import EScooterResponse
 from src.services.database import get_db
-from src.services.rag.sync import (
-    changed_motorbike_chunk_types,
-    delete_vehicle_vectors,
-    snapshot_motorbike,
-    sync_vehicle_vectors,
-)
 from src.services.security import require_roles
 
 router = APIRouter()
@@ -257,7 +251,6 @@ async def get_motorbike_by_id_or_code(motorbike_id_or_code: str, db: AsyncSessio
 @router.post("", response_model=EScooterResponse, status_code=status.HTTP_201_CREATED)
 @router.post("/", response_model=EScooterResponse, status_code=status.HTTP_201_CREATED, include_in_schema=False)
 async def create_motorbike(
-    background_tasks: BackgroundTasks,
     # Primary fields
     model_name: str | None = Form(None),
     vehicle_line: str | None = Form(None),
@@ -379,18 +372,11 @@ async def create_motorbike(
     await db.commit()
     await db.refresh(new_motorbike)
     invalidate_motorbikes_cache()
-    if new_motorbike.is_active:
-        background_tasks.add_task(
-            sync_vehicle_vectors,
-            vehicle_type="motorbike",
-            vehicle_id=str(new_motorbike.motorbike_id),
-        )
     return new_motorbike
 
 
 @router.put("/{motorbike_id}", response_model=EScooterResponse)
 async def update_motorbike(
-    background_tasks: BackgroundTasks,
     motorbike_id: uuid.UUID,
     # Primary fields
     model_name: str | None = Form(None),
@@ -430,8 +416,6 @@ async def update_motorbike(
     motorbike = result.scalar_one_or_none()
     if not motorbike:
         raise HTTPException(status_code=404, detail="Không tìm thấy mẫu xe máy điện!")
-
-    before_rag = snapshot_motorbike(motorbike)
 
     if model_name is not None:
         motorbike.model_name = model_name
@@ -525,22 +509,6 @@ async def update_motorbike(
     await db.commit()
     await db.refresh(motorbike)
     invalidate_motorbikes_cache()
-    after_rag = snapshot_motorbike(motorbike)
-    changed_groups = changed_motorbike_chunk_types(before_rag, after_rag)
-    if not after_rag.active:
-        await delete_vehicle_vectors(
-            db,
-            vehicle_type="motorbike",
-            vehicle_id=str(motorbike.motorbike_id),
-        )
-        await db.commit()
-    elif changed_groups:
-        background_tasks.add_task(
-            sync_vehicle_vectors,
-            vehicle_type="motorbike",
-            vehicle_id=str(motorbike.motorbike_id),
-            chunk_types=changed_groups,
-        )
     return motorbike
 
 
@@ -555,11 +523,6 @@ async def delete_motorbike(
     if not motorbike:
         raise HTTPException(status_code=404, detail="Không tìm thấy mẫu xe máy điện!")
 
-    await delete_vehicle_vectors(
-        db,
-        vehicle_type="motorbike",
-        vehicle_id=str(motorbike.motorbike_id),
-    )
     await db.delete(motorbike)
     await db.commit()
     invalidate_motorbikes_cache()

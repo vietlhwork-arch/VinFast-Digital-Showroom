@@ -1,12 +1,11 @@
 import uuid
 
-import httpx
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.domain import Account
-from src.models.schemas import GoogleLoginRequest, TokenResponse, UserLogin, UserRegister, UserResponse, UserUpdate
+from src.models.schemas import TokenResponse, UserLogin, UserRegister, UserResponse, UserUpdate
 from src.services.customer_profile_service import sync_from_account_register
 from src.services.database import get_db
 from src.services.security import create_access_token, get_current_user, hash_password, require_roles, verify_password
@@ -23,15 +22,12 @@ async def register(payload: UserRegister, db: AsyncSession = Depends(get_db)):
             detail="Email này đã được đăng ký trong hệ thống!",
         )
 
-    valid_roles = ["customer", "consultant", "admin"]
-    role = payload.role if payload.role in valid_roles else "customer"
-
     new_user = Account(
         email=payload.email.lower(),
         phone=payload.phone,
         password_hash=hash_password(payload.password),
         full_name=payload.full_name,
-        role=role,
+        role="customer",
         status="active",
     )
     db.add(new_user)
@@ -63,88 +59,6 @@ async def login(payload: UserLogin, db: AsyncSession = Depends(get_db)):
 
     access_token = create_access_token(data={"sub": str(user.user_id), "role": user.role})
     return TokenResponse(access_token=access_token, token_type="bearer", user=UserResponse.model_validate(user))
-
-
-@router.post("/google", response_model=TokenResponse)
-async def google_login(payload: GoogleLoginRequest, db: AsyncSession = Depends(get_db)):
-    """Xác thực Google Token (ID Token hoặc Access Token) và đăng nhập/tự động đăng ký khách hàng."""
-    token = payload.id_token.strip()
-    if not token:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Google Token không được để trống!",
-        )
-
-    # Verify Google Token with Google OAuth2 API
-    email = None
-    full_name = None
-    try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            # 1. Try ID token verification
-            resp = await client.get(f"https://oauth2.googleapis.com/tokeninfo?id_token={token}")
-            if resp.status_code == 200:
-                google_data = resp.json()
-                email = google_data.get("email")
-                full_name = google_data.get("name") or google_data.get("given_name") or "Khách hàng Google"
-            else:
-                # 2. Try Access token verification
-                userinfo_resp = await client.get(
-                    "https://www.googleapis.com/oauth2/v3/userinfo",
-                    headers={"Authorization": f"Bearer {token}"},
-                )
-                if userinfo_resp.status_code == 200:
-                    google_data = userinfo_resp.json()
-                    email = google_data.get("email")
-                    full_name = google_data.get("name") or google_data.get("given_name") or "Khách hàng Google"
-                else:
-                    raise HTTPException(
-                        status_code=status.HTTP_401_UNAUTHORIZED,
-                        detail="Google Token không hợp lệ hoặc đã hết hạn!",
-                    )
-
-            if not email:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Không thể lấy thông tin Email từ Google Token!",
-                )
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Lỗi xác thực Google Token: {str(e)}",
-        )
-
-    email = email.lower()
-
-    # Check if Account exists in DB
-    result = await db.execute(select(Account).where(Account.email == email))
-    user = result.scalar_one_or_none()
-
-    if not user:
-        # Create new Customer Account automatically
-        user = Account(
-            email=email,
-            phone="",
-            password_hash=hash_password(str(uuid.uuid4())),
-            full_name=full_name,
-            role="customer",
-            status="active",
-        )
-        db.add(user)
-        await db.commit()
-        await db.refresh(user)
-        await sync_from_account_register(db, user)
-
-    if not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Tài khoản đã bị khóa!",
-        )
-
-    access_token = create_access_token(data={"sub": str(user.user_id), "role": user.role})
-    return TokenResponse(access_token=access_token, token_type="bearer", user=UserResponse.model_validate(user))
-
 
 
 @router.get("/me", response_model=UserResponse)

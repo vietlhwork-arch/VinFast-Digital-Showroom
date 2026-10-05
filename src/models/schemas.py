@@ -5,52 +5,18 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
-# --- Chat & AI Agent Schemas ---
-class ChatRequest(BaseModel):
-    message: str = Field(..., min_length=1, max_length=5000, description="Tin nhắn từ user")
-    session_id: str = Field(default_factory=lambda: str(uuid.uuid4()), description="Mã phiên đàm thoại")
-    user_id: str | None = Field(default=None, description="ID người dùng đã đăng nhập")
-    user_email: str | None = Field(default=None, description="Email người dùng đã đăng nhập")
-    stream: bool | None = Field(default=False, description="Stream response token by token")
-
-
-class ChatResponse(BaseModel):
-    response: str = Field(..., description="Phản hồi từ agent")
-    analysis: str = Field(default="", description="Phân tích nội bộ")
-    session_id: str | None = Field(default=None, description="Mã phiên đàm thoại")
-    stage: str | None = Field(default="CHAT", description="Trạng thái hội thoại")
-    action: dict[str, Any] | None = Field(default=None, description="Hành động tương tác có cấu trúc (ví dụ: tạo báo giá)")
-    updated_user: dict[str, Any] | None = Field(default=None, description="Thông tin user được cập nhật tự động (như SĐT)")
-
-
-class EndSessionRequest(BaseModel):
-    session_id: str = Field(..., description="Mã phiên đàm thoại")
-    user_id: str | None = Field(default=None, description="ID người dùng đã đăng nhập")
-
-
-class EndSessionResponse(BaseModel):
-    status: str = Field(default="success", description="Trạng thái kết thúc phiên")
-    message: str = Field(..., description="Thông báo kết quả")
-    summary_text: str | None = Field(default=None, description="Tóm tắt nhu cầu hợp nhất")
-
-
-
 # --- Auth Schemas ---
 class UserRegister(BaseModel):
     email: EmailStr
     phone: str = Field(..., min_length=9, max_length=15)
-    password: str = Field(..., min_length=6)
+    password: str = Field(..., min_length=8)
     full_name: str = Field(..., min_length=2)
-    role: str = "customer"  # "customer", "consultant", "admin"
+    role: str = "customer"
 
 
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
-
-
-class GoogleLoginRequest(BaseModel):
-    id_token: str
 
 
 class UserResponse(BaseModel):
@@ -241,7 +207,7 @@ class QuoteCreate(BaseModel):
     base_price: int
     discount: int = 0
     final_price: int
-    ai_summary: str | None = None
+    request_note: str | None = None
 
 
 class QuoteUpdateStatus(BaseModel):
@@ -288,7 +254,7 @@ class CustomerProfileBase(BaseModel):
     lead_score: str = "WARM"
     lead_status: str = "NEW"
     all_interested_models: list[str] = Field(default_factory=list)
-    ai_customer_portrait: str | None = None
+    customer_note: str | None = None
 
 
 class CustomerProfileCreate(CustomerProfileBase):
@@ -299,7 +265,7 @@ class CustomerProfileUpdate(BaseModel):
     lead_score: str | None = None
     lead_status: str | None = None
     all_interested_models: list[str] | None = None
-    ai_customer_portrait: str | None = None
+    customer_note: str | None = None
 
 
 class CustomerProfileResponse(CustomerProfileBase):

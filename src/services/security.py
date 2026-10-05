@@ -1,5 +1,5 @@
 import uuid
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import jwt
 from fastapi import Depends, HTTPException, status
@@ -13,6 +13,7 @@ from src.models.domain import Account, User
 from src.services.database import get_db
 
 settings = get_settings()
+UTC = timezone.utc
 
 SECRET_KEY = settings.secret_key
 ALGORITHM = settings.algorithm
@@ -42,34 +43,34 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
     return encoded_jwt
 
 
+def decode_access_token(token: str) -> uuid.UUID:
+    """Validate a JWT and return its account id.
+
+    This framework-independent helper is shared by HTTP and WebSocket auth.
+    """
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        subject = payload.get("sub")
+        if not subject:
+            raise ValueError("Token does not contain a subject")
+        return uuid.UUID(str(subject))
+    except (jwt.PyJWTError, TypeError, ValueError) as exc:
+        raise ValueError("Token không hợp lệ hoặc đã hết hạn") from exc
+
+
 async def get_current_user(
     token: str | None = Depends(oauth2_scheme),
     db: AsyncSession = Depends(get_db),
 ) -> Account:
     if not token:
-        res = await db.execute(select(Account).where(Account.role == "admin"))
-        admin_user = res.scalars().first()
-        if admin_user:
-            return admin_user
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Chưa xác thực. Vui lòng đăng nhập!",
             headers={"WWW-Authenticate": "Bearer"},
         )
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id_str: str = payload.get("sub")
-        if user_id_str is None:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Token không hợp lệ!",
-            )
-        user_id = uuid.UUID(user_id_str)
-    except Exception:
-        res = await db.execute(select(Account).where(Account.role == "admin"))
-        admin_user = res.scalars().first()
-        if admin_user:
-            return admin_user
+        user_id = decode_access_token(token)
+    except ValueError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token không hợp lệ hoặc đã hết hạn!",
@@ -79,10 +80,6 @@ async def get_current_user(
     result = await db.execute(select(Account).where(Account.user_id == user_id))
     user = result.scalar_one_or_none()
     if user is None or not user.is_active:
-        res = await db.execute(select(Account).where(Account.role == "admin"))
-        admin_user = res.scalars().first()
-        if admin_user:
-            return admin_user
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Tài khoản không tồn tại hoặc đã bị khóa!",

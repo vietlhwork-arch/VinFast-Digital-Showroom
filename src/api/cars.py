@@ -5,19 +5,13 @@ import uuid
 from copy import deepcopy
 from typing import Any
 
-from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.domain import Account, CarCatalog
 from src.models.schemas import CarResponse
 from src.services.database import get_db
-from src.services.rag.sync import (
-    changed_car_chunk_types,
-    delete_vehicle_vectors,
-    snapshot_car,
-    sync_vehicle_vectors,
-)
 from src.services.security import require_roles
 
 router = APIRouter()
@@ -269,7 +263,6 @@ def _extract_top_level_colors(raw_specs: dict[str, Any]) -> list[Any] | None:
 @router.post("", response_model=CarResponse, status_code=status.HTTP_201_CREATED)
 @router.post("/", response_model=CarResponse, status_code=status.HTTP_201_CREATED, include_in_schema=False)
 async def create_car(
-    background_tasks: BackgroundTasks,
     # Primary fields
     model_name: str | None = Form(None),
     vehicle_line: str | None = Form(None),
@@ -368,18 +361,11 @@ async def create_car(
     await db.commit()
     await db.refresh(new_car)
     invalidate_cars_cache()
-    if new_car.is_active:
-        background_tasks.add_task(
-            sync_vehicle_vectors,
-            vehicle_type="car",
-            vehicle_id=str(new_car.car_id),
-        )
     return new_car
 
 
 @router.put("/{car_id}", response_model=CarResponse)
 async def update_car(
-    background_tasks: BackgroundTasks,
     car_id: uuid.UUID,
     model_name: str | None = Form(None),
     vehicle_line: str | None = Form(None),
@@ -412,8 +398,6 @@ async def update_car(
     car = result.scalar_one_or_none()
     if not car:
         raise HTTPException(status_code=404, detail="Không tìm thấy mẫu xe!")
-
-    before_rag = snapshot_car(car)
 
     if model_name is not None:
         car.model_name = model_name
@@ -506,22 +490,6 @@ async def update_car(
     await db.commit()
     await db.refresh(car)
     invalidate_cars_cache()
-    after_rag = snapshot_car(car)
-    changed_groups = changed_car_chunk_types(before_rag, after_rag)
-    if not after_rag.active:
-        await delete_vehicle_vectors(
-            db,
-            vehicle_type="car",
-            vehicle_id=str(car.car_id),
-        )
-        await db.commit()
-    elif changed_groups:
-        background_tasks.add_task(
-            sync_vehicle_vectors,
-            vehicle_type="car",
-            vehicle_id=str(car.car_id),
-            chunk_types=changed_groups,
-        )
     return car
 
 
@@ -536,11 +504,6 @@ async def delete_car(
     if not car:
         raise HTTPException(status_code=404, detail="Không tìm thấy mẫu xe!")
 
-    await delete_vehicle_vectors(
-        db,
-        vehicle_type="car",
-        vehicle_id=str(car.car_id),
-    )
     await db.delete(car)
     await db.commit()
     invalidate_cars_cache()

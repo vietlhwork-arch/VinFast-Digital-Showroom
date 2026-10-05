@@ -5,21 +5,17 @@ from sqlalchemy import (
     JSON,
     BigInteger,
     Boolean,
-    CheckConstraint,
     Date,
     DateTime,
     Float,
     ForeignKey,
-    Index,
     Integer,
     String,
     Text,
     func,
-    text,
 )
-from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-from sqlalchemy.types import CHAR, TypeDecorator, UserDefinedType
+from sqlalchemy.types import CHAR, TypeDecorator
 
 
 class GUID(TypeDecorator):
@@ -56,19 +52,6 @@ class GUID(TypeDecorator):
                 return uuid.UUID(value)
             else:
                 return value
-
-
-class PGVector(UserDefinedType):
-    """Kiểu pgvector tối giản, có biến thể JSON để chạy test SQLite."""
-
-    cache_ok = True
-
-    def __init__(self, dimensions: int):
-        self.dimensions = dimensions
-
-    def get_col_spec(self, **kw) -> str:
-        del kw
-        return f"VECTOR({self.dimensions})"
 
 
 class Base(DeclarativeBase):
@@ -275,88 +258,7 @@ class MotorbikeCatalog(Base):
 EScooter = MotorbikeCatalog
 
 
-# 4. Catalog Vectors Table (RAG pgvector embeddings)
-class CatalogVector(Base):
-    __tablename__ = "catalog_vectors"
-
-    vector_id: Mapped[uuid.UUID] = mapped_column(GUID(), primary_key=True, default=uuid.uuid4)
-    car_id: Mapped[uuid.UUID | None] = mapped_column(GUID(), ForeignKey("car_catalog.car_id", ondelete="CASCADE"))
-    motorbike_id: Mapped[uuid.UUID | None] = mapped_column(GUID(), ForeignKey("motorbike_catalog.motorbike_id", ondelete="CASCADE"))
-    chunk_type: Mapped[str] = mapped_column(String(50), nullable=False)
-    chunk_text: Mapped[str] = mapped_column(Text, nullable=False)
-    embedding: Mapped[object] = mapped_column(
-        PGVector(1536).with_variant(JSON(), "sqlite"),
-        nullable=False,
-    )
-    content_hash: Mapped[str | None] = mapped_column(String(100))
-    chunk_index: Mapped[int] = mapped_column(Integer, default=0)
-    source_paths: Mapped[list[str]] = mapped_column(
-        ARRAY(Text).with_variant(JSON(), "sqlite"),
-        default=list,
-        nullable=False,
-    )
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
-
-
-# 5. Chat History Table
-class ChatHistory(Base):
-    __tablename__ = "chat_history"
-
-    message_id: Mapped[uuid.UUID] = mapped_column(GUID(), primary_key=True, default=uuid.uuid4)
-    user_id: Mapped[uuid.UUID | None] = mapped_column(GUID(), ForeignKey("accounts.user_id", ondelete="CASCADE"), nullable=True)
-    role: Mapped[str] = mapped_column(String(20), nullable=False)  # "user", "assistant", "system"
-    content: Mapped[str] = mapped_column(Text, nullable=False)
-    metadata_info: Mapped[dict | None] = mapped_column("metadata", JSON)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-
-
-# 6. Chat Summaries Table
-class ChatSummary(Base):
-    __tablename__ = "chat_summaries"
-    __table_args__ = (
-        CheckConstraint(
-            "user_id IS NOT NULL OR NULLIF(TRIM(session_id), '') IS NOT NULL",
-            name="ck_chat_summaries_owner",
-        ),
-        Index(
-            "uq_chat_summaries_user",
-            "user_id",
-            unique=True,
-            postgresql_where=text("user_id IS NOT NULL"),
-        ),
-        Index(
-            "uq_chat_summaries_guest_session",
-            "session_id",
-            unique=True,
-            postgresql_where=text("user_id IS NULL"),
-        ),
-    )
-
-    summary_id: Mapped[uuid.UUID] = mapped_column(GUID(), primary_key=True, default=uuid.uuid4)
-    user_id: Mapped[uuid.UUID | None] = mapped_column(GUID(), ForeignKey("accounts.user_id", ondelete="CASCADE"), nullable=True)
-    session_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    summary_text: Mapped[str] = mapped_column(Text, nullable=False)
-    summarized_through: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
-
-
-# 7. Long-term Memory Table
-class LongTermMemory(Base):
-    __tablename__ = "long_term_memory"
-
-    memory_id: Mapped[uuid.UUID] = mapped_column(GUID(), primary_key=True, default=uuid.uuid4)
-    user_id: Mapped[uuid.UUID] = mapped_column(GUID(), ForeignKey("accounts.user_id", ondelete="CASCADE"), nullable=False)
-    memory_key: Mapped[str] = mapped_column(String(100), nullable=False)
-    memory_value: Mapped[dict] = mapped_column(JSON, nullable=False)
-    source_message_id: Mapped[uuid.UUID | None] = mapped_column(GUID(), ForeignKey("chat_history.message_id", ondelete="SET NULL"))
-    confidence: Mapped[float] = mapped_column(Float, default=1.0)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
-
-
-# 8. Business Workflow Tables (Quotes & Test Drive Bookings)
+# Business workflow tables
 class Quote(Base):
     __tablename__ = "quotes"
 
@@ -370,7 +272,7 @@ class Quote(Base):
     base_price: Mapped[int] = mapped_column(BigInteger, nullable=False)
     discount: Mapped[int] = mapped_column(BigInteger, default=0, nullable=False)
     final_price: Mapped[int] = mapped_column(BigInteger, nullable=False)
-    ai_summary: Mapped[str | None] = mapped_column(Text)
+    request_note: Mapped[str | None] = mapped_column("ai_summary", Text)
     status: Mapped[str] = mapped_column(String, default="pending", nullable=False)
     notes: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
@@ -390,6 +292,39 @@ class TestDriveBooking(Base):
     status: Mapped[str] = mapped_column(String, default="pending", nullable=False)
     notes: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+# Human support chat
+class SupportConversation(Base):
+    __tablename__ = "support_conversations"
+
+    conversation_id: Mapped[uuid.UUID] = mapped_column(GUID(), primary_key=True, default=uuid.uuid4)
+    customer_id: Mapped[uuid.UUID] = mapped_column(
+        GUID(), ForeignKey("accounts.user_id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    assigned_staff_id: Mapped[uuid.UUID | None] = mapped_column(
+        GUID(), ForeignKey("accounts.user_id", ondelete="SET NULL"), index=True, nullable=True
+    )
+    subject: Mapped[str] = mapped_column(String(160), nullable=False)
+    status: Mapped[str] = mapped_column(String(20), default="open", index=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+class SupportMessage(Base):
+    __tablename__ = "support_messages"
+
+    message_id: Mapped[uuid.UUID] = mapped_column(GUID(), primary_key=True, default=uuid.uuid4)
+    conversation_id: Mapped[uuid.UUID] = mapped_column(
+        GUID(), ForeignKey("support_conversations.conversation_id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    sender_id: Mapped[uuid.UUID] = mapped_column(
+        GUID(), ForeignKey("accounts.user_id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    sent_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
 # 9. VinFast Showrooms & Charging Stations Table
@@ -434,7 +369,7 @@ class CustomerProfile(Base):
     lead_score: Mapped[str] = mapped_column(String(20), default="WARM", nullable=False)  # "HOT", "WARM", "COLD"
     lead_status: Mapped[str] = mapped_column(String(50), default="NEW", nullable=False)  # "NEW", "CONTACTED", "TEST_DRIVEN", "QUOTED", "WON", "LOST"
     all_interested_models: Mapped[list] = mapped_column(JSON, default=list, nullable=False)  # Tích lũy tất cả các xe từng quan tâm
-    ai_customer_portrait: Mapped[str | None] = mapped_column(Text)  # AI tóm tắt chân dung tổng thể qua các đợt
+    customer_note: Mapped[str | None] = mapped_column("ai_customer_portrait", Text)
 
     # Thống kê hoạt động tổng quan
     total_demands: Mapped[int] = mapped_column(Integer, default=0, nullable=False)

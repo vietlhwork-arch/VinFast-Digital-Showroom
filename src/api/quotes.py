@@ -4,10 +4,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.models.domain import Quote, User
+from src.models.domain import Account, Quote, User
 from src.models.schemas import QuoteCreate, QuoteResponse, QuoteUpdateStatus
 from src.services.database import get_db
-from src.services.security import require_roles
+from src.services.security import get_current_user, require_roles
 
 router = APIRouter()
 
@@ -54,18 +54,22 @@ async def get_quotes(
     user_id: str | None = None,
     email: str | None = None,
     phone: str | None = None,
+    current_user: Account = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     from sqlalchemy import or_
 
     query = select(Quote)
     conditions = []
-    if user_id and user_id.strip():
-        conditions.append(Quote.user_id == user_id.strip())
-    if email and email.strip():
-        conditions.append(Quote.customer_email.ilike(email.strip()))
-    if phone and phone.strip():
-        conditions.append(Quote.customer_phone == phone.strip())
+    if current_user.role == "customer":
+        conditions.append(Quote.user_id == str(current_user.user_id))
+    else:
+        if user_id and user_id.strip():
+            conditions.append(Quote.user_id == user_id.strip())
+        if email and email.strip():
+            conditions.append(Quote.customer_email.ilike(email.strip()))
+        if phone and phone.strip():
+            conditions.append(Quote.customer_phone == phone.strip())
 
     if conditions:
         query = query.where(or_(*conditions))
@@ -77,8 +81,18 @@ async def get_quotes(
 
 
 @router.post("", response_model=QuoteResponse, status_code=status.HTTP_201_CREATED)
-async def post_quote(payload: QuoteCreate, db: AsyncSession = Depends(get_db)):
-    return await create_quote(db, payload)
+async def post_quote(
+    payload: QuoteCreate,
+    current_user: Account = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    owned_payload = payload.model_copy(update={
+        "user_id": str(current_user.user_id),
+        "customer_name": current_user.full_name,
+        "customer_email": current_user.email,
+        "customer_phone": current_user.phone,
+    })
+    return await create_quote(db, owned_payload)
 
 
 @router.put("/{quote_id}", response_model=QuoteResponse)

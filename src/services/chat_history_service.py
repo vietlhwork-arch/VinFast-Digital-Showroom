@@ -4,7 +4,7 @@ Manages active session messages in Supabase `public.chat_history` and
 long-term user demand summaries in `public.chat_summaries`.
 """
 
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from typing import Any
 from urllib.parse import quote
 
@@ -14,6 +14,7 @@ from src.config import get_settings
 from src.services.llm import get_llm
 
 settings = get_settings()
+UTC = timezone.utc
 
 # Keep the active, unsummarized conversation comfortably below the model's
 # context window. At 80%, previous turns are merged into the rolling summary.
