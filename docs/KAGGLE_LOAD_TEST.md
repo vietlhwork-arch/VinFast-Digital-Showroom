@@ -17,6 +17,7 @@ Ghi lại Python version, số CPU, RAM, commit hash và `DATABASE_URL` loại S
 Khởi động backend trong một cell/terminal:
 
 ```bash
+cd backend
 pip install -r requirements.txt
 python scripts/seed_catalog_from_frontend.py
 uvicorn src.main:app --host 127.0.0.1 --port 8000

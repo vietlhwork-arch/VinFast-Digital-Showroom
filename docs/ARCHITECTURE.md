@@ -26,7 +26,7 @@ flowchart TB
 Quy tắc dependency:
 
 - API chịu trách nhiệm HTTP, schema, status code, dependency injection và broadcast.
-- Business chịu trách nhiệm quyền nghiệp vụ, state transition và validation. `src/services/support_chat.py` không import web framework hoặc DB library.
+- Business chịu trách nhiệm quyền nghiệp vụ, state transition và validation. `backend/src/services/support_chat.py` không import web framework hoặc DB library.
 - Repository protocol mô tả đúng dữ liệu use case cần. SQLAlchemy adapter chuyển ORM row thành dataclass nghiệp vụ.
 - ORM model chỉ mô tả lưu trữ; client không truy cập database trực tiếp.
 

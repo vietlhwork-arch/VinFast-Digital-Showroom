@@ -20,13 +20,13 @@ Chat hỗ trợ được lưu trong database. REST API dùng để tải lịch 
 Swagger / HTTP client
     │  JSON/REST + WebSocket
     ▼
-FastAPI API layer          src/api/
+FastAPI API layer          backend/src/api/
     │  gọi use case
     ▼
-Business layer             src/services/support_chat.py
+Business layer             backend/src/services/support_chat.py
     │  ConversationRepository (Protocol)
     ▼
-Data access layer          src/repositories/support_chat.py
+Data access layer          backend/src/repositories/support_chat.py
     │
     ▼
 SQLAlchemy → SQLite hoặc PostgreSQL
@@ -51,6 +51,7 @@ Backend:
 
 ```powershell
 Copy-Item .env.example .env
+Set-Location backend
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
@@ -89,6 +90,7 @@ DATABASE_URL=postgresql+asyncpg://user:password@host:5432/database
 Ứng dụng tự tạo các bảng còn thiếu khi khởi động. Script seed catalog dùng upsert, không xóa dữ liệu đã có:
 
 ```powershell
+Set-Location backend
 python scripts/seed_catalog_from_frontend.py
 ```
 
@@ -103,6 +105,7 @@ Container chỉ đóng gói backend và phục vụ API tại `http://localhost:
 ## Kiểm thử và kiểm tra chất lượng
 
 ```powershell
+Set-Location backend
 pytest -q
 ruff check src tests
 ```
@@ -110,6 +113,7 @@ ruff check src tests
 Load test không cần cài thêm thư viện:
 
 ```powershell
+Set-Location backend
 python scripts/load_test.py --base-url http://127.0.0.1:8000 --duration 120 --concurrency 20
 ```
 
@@ -127,12 +131,15 @@ Quy trình cố định cấu hình Kaggle CPU và cách báo cáo trước/sau 
 ## Cấu trúc chính
 
 ```text
-src/api/                      HTTP/WebSocket adapters
-src/services/                 business use cases và dịch vụ ứng dụng
-src/repositories/             data-access adapters
-src/models/                   ORM models và API schemas
-tests/                        unit/integration tests
-scripts/                      seed dữ liệu và load test
+backend/src/api/              HTTP/WebSocket adapters
+backend/src/services/         business use cases và dịch vụ ứng dụng
+backend/src/repositories/     data-access adapters
+backend/src/models/           ORM models và API schemas
+backend/tests/                unit/integration tests
+backend/scripts/              seed dữ liệu và load test
+backend/Dockerfile            backend-only production image
+data/                         catalog seed có thể review
+static/                       ảnh và tệp media do backend phục vụ
 docs/                         tài liệu chuẩn của sản phẩm
 frontend/src/                 client tham khảo, ngoài Pha 1
 ```
