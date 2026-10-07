@@ -14,10 +14,10 @@ import sys
 from pathlib import Path
 from typing import Any
 
-
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-FRONTEND_CATALOG = PROJECT_ROOT / "frontend" / "src" / "data" / "vehicles.ts"
-sys.path.insert(0, str(PROJECT_ROOT))
+BACKEND_ROOT = Path(__file__).resolve().parents[1]
+REPOSITORY_ROOT = BACKEND_ROOT.parent
+FRONTEND_CATALOG = REPOSITORY_ROOT / "frontend" / "src" / "data" / "vehicles.ts"
+sys.path.insert(0, str(BACKEND_ROOT))
 
 
 def parse_args() -> argparse.Namespace:

@@ -5,7 +5,8 @@ from typing import Literal
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-PROJECT_ENV_FILE = Path(__file__).resolve().parents[1] / ".env"
+REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_ENV_FILE = REPOSITORY_ROOT / ".env"
 
 
 class Settings(BaseSettings):

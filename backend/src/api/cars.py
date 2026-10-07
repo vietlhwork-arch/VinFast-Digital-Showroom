@@ -16,8 +16,8 @@ from src.services.security import require_roles
 
 router = APIRouter()
 
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-UPLOAD_DIR = os.path.join("/tmp", "uploads", "cars") if os.environ.get("VERCEL") else os.path.join(PROJECT_ROOT, "static", "uploads", "cars")
+REPOSITORY_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+UPLOAD_DIR = os.path.join("/tmp", "uploads", "cars") if os.environ.get("VERCEL") else os.path.join(REPOSITORY_ROOT, "static", "uploads", "cars")
 try:
     os.makedirs(UPLOAD_DIR, exist_ok=True)
 except Exception:

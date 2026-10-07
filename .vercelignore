@@ -6,6 +6,7 @@ frontend/.vite
 
 # Exclude heavy media from serverless function bundle (< 225MB limit)
 /static/uploads
+/backend/static/uploads
 /frontend/VINpng
 /frontend/public/VIN png
 /frontend/public/VINpng
@@ -19,8 +20,8 @@ frontend/.vite
 
 # Backend-only course material and local tooling
 /docs/
-/tests/
-/scripts/
+/backend/tests/
+/backend/scripts/
 *.pyc
 __pycache__/
 

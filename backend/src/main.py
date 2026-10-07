@@ -19,9 +19,9 @@ from src.services.security import hash_password
 from src.services.vinfast_locations_service import seed_vinfast_locations_if_empty
 
 settings = get_settings()
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-STATIC_DIR = PROJECT_ROOT / "static"
-FRONTEND_DIST = PROJECT_ROOT / "frontend" / "dist"
+REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
+STATIC_DIR = REPOSITORY_ROOT / "static"
+FRONTEND_DIST = REPOSITORY_ROOT / "frontend" / "dist"
 
 
 async def seed_demo_accounts() -> None:

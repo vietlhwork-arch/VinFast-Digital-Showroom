@@ -22,8 +22,8 @@ from src.services.vehicle_media import (
 )
 
 router = APIRouter()
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
-UPLOAD_ROOT = PROJECT_ROOT / "static" / "uploads"
+REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
+UPLOAD_ROOT = REPOSITORY_ROOT / "static" / "uploads"
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".avif"}
 MAX_FILE_BYTES = 8 * 1024 * 1024
 

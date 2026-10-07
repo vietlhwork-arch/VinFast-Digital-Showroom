@@ -10,9 +10,10 @@ import re
 import sys
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-UPLOAD_ROOT = PROJECT_ROOT / "static" / "uploads"
-sys.path.insert(0, str(PROJECT_ROOT))
+BACKEND_ROOT = Path(__file__).resolve().parents[1]
+REPOSITORY_ROOT = BACKEND_ROOT.parent
+UPLOAD_ROOT = REPOSITORY_ROOT / "static" / "uploads"
+sys.path.insert(0, str(BACKEND_ROOT))
 
 
 def slugify(value: str) -> str:
@@ -98,7 +99,7 @@ async def seed_media() -> None:
                     for order, path in enumerate(sorted(color_root.rglob("*")), start=1):
                         if not path.is_file() or path.suffix.lower() not in {".jpg", ".jpeg", ".png", ".webp", ".avif"}:
                             continue
-                        url = "/" + path.relative_to(PROJECT_ROOT).as_posix()
+                        url = "/" + path.relative_to(REPOSITORY_ROOT).as_posix()
                         if url in existing_urls:
                             skipped += 1
                             continue

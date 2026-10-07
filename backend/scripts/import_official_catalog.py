@@ -10,9 +10,10 @@ import sys
 import uuid
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_CSV = PROJECT_ROOT / "data" / "catalog" / "official_catalog_extensions.csv"
-sys.path.insert(0, str(PROJECT_ROOT))
+BACKEND_ROOT = Path(__file__).resolve().parents[1]
+REPOSITORY_ROOT = BACKEND_ROOT.parent
+DEFAULT_CSV = REPOSITORY_ROOT / "data" / "catalog" / "official_catalog_extensions.csv"
+sys.path.insert(0, str(BACKEND_ROOT))
 
 
 def optional_number(value: str, cast):

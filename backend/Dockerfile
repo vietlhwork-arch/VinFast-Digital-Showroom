@@ -9,7 +9,7 @@ WORKDIR /app
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-COPY requirements.txt .
+COPY backend/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
 # ---- Stage 2: Production runtime ----
@@ -23,7 +23,7 @@ ENV PYTHONUNBUFFERED=1
 
 # Copy only runtime-owned backend files. Documentation, tests and the optional
 # frontend client never enter the Phase 1 image.
-COPY src ./src
+COPY backend/src ./src
 COPY static ./static
 
 # Security: Create non-root user & ensure directory permissions
