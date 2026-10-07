@@ -15,6 +15,7 @@ from src.api.motorbikes import router as motorbikes_router
 from src.api.quotes import router as quotes_router
 from src.api.support_chat import router as support_chat_router
 from src.api.tco import router as tco_router
+from src.api.vehicle_media import router as vehicle_media_router
 
 router = APIRouter()
 router.include_router(auth_router, prefix="/auth", tags=["Authentication"])
@@ -26,3 +27,4 @@ router.include_router(bookings_router, prefix="/bookings", tags=["Test-drive boo
 router.include_router(customer_profiles_router, prefix="/customer-profiles", tags=["Customer CRM"])
 router.include_router(tco_router, prefix="/tco", tags=["Ownership cost"])
 router.include_router(support_chat_router, prefix="/conversations", tags=["Human support chat"])
+router.include_router(vehicle_media_router, prefix="/catalog-media", tags=["Catalog media"])

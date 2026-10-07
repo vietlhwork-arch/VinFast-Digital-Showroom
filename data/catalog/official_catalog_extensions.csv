@@ -1,0 +1,27 @@
+vehicle_type,model_name,vehicle_line,version,category,list_price,seat_count,battery_type,battery_capacity_kwh,image_url,is_active,lifecycle,source_url,source_checked_at
+car,VinFast VF Wild,VF Wild,Tiêu chuẩn,Pickup,860000000,5,,,/static/vehicle-placeholder.svg,true,current,https://vinfastauto.com/vn_vi,2026-10-05
+motorbike,VinFast Motio,Motio,Ắc quy chì,Phổ thông,12000000,,Ắc quy chì,,/static/vehicle-placeholder.svg,true,current,https://vinfastauto.com/vn_vi/hop-dong-va-chinh-sach/download/52416,2026-10-05
+motorbike,VinFast Evo200 Lite,Evo200 Lite,Pin LFP,Phổ thông,22000000,,LFP,3.5,/static/vehicle-placeholder.svg,true,current,https://vinfastauto.com/vn_vi/hop-dong-va-chinh-sach/download/52416,2026-10-05
+motorbike,VinFast Evo200,Evo200,Pin LFP,Phổ thông,22000000,,LFP,3.5,/static/vehicle-placeholder.svg,true,current,https://vinfastauto.com/vn_vi/hop-dong-va-chinh-sach/download/52416,2026-10-05
+motorbike,VinFast Evo Neo,Evo Neo,Pin LFP,Phổ thông,17800000,,LFP,2.0,/static/vehicle-placeholder.svg,true,current,https://vinfastauto.com/vn_vi/hop-dong-va-chinh-sach/download/52416,2026-10-05
+motorbike,VinFast Evo Grand Limited,Evo Grand Limited,Kèm pin,Phổ thông,29900000,,LFP,,/static/vehicle-placeholder.svg,true,current,https://vinfastauto.com/vn_vi/cho-xe-may-dien,2026-10-05
+motorbike,VinFast Evo Grand Premia,Evo Grand Premia,Kèm pin,Phổ thông,27900000,,LFP,,/static/vehicle-placeholder.svg,true,current,https://vinfastauto.com/vn_vi/cho-xe-may-dien,2026-10-05
+motorbike,VinFast Evo Grand II,Evo Grand II,Kèm pin,Phổ thông,25900000,,LFP,,/static/vehicle-placeholder.svg,true,current,https://vinfastauto.com/vn_vi/cho-xe-may-dien,2026-10-05
+motorbike,VinFast Feliz Neo,Feliz Neo,Pin LFP,Trung cấp,22400000,,LFP,2.0,/static/vehicle-placeholder.svg,true,current,https://vinfastauto.com/vn_vi/hop-dong-va-chinh-sach/download/52416,2026-10-05
+motorbike,VinFast Feliz S,Feliz S,Pin LFP,Trung cấp,29700000,,LFP,3.5,/static/vehicle-placeholder.svg,true,current,https://vinfastauto.com/vn_vi/hop-dong-va-chinh-sach/download/52416,2026-10-05
+motorbike,VinFast Feliz Lite,Feliz Lite,Pin LFP,Trung cấp,25900000,,LFP,2.4,/static/vehicle-placeholder.svg,true,current,https://vinfastauto.com/vn_vi/hop-dong-va-chinh-sach/download/52416,2026-10-05
+motorbike,VinFast Klara S2,Klara S2,Pin LFP,Trung cấp,36500000,,LFP,3.5,/static/vehicle-placeholder.svg,true,current,https://vinfastauto.com/vn_vi/hop-dong-va-chinh-sach/download/52416,2026-10-05
+motorbike,VinFast Klara Neo,Klara Neo,Pin LFP,Trung cấp,28800000,,LFP,2.0,/static/vehicle-placeholder.svg,true,current,https://vinfastauto.com/vn_vi/hop-dong-va-chinh-sach/download/52416,2026-10-05
+motorbike,VinFast Vento S,Vento S,Pin LFP,Cao cấp,49200000,,LFP,3.5,/static/vehicle-placeholder.svg,true,current,https://vinfastauto.com/vn_vi/hop-dong-va-chinh-sach/download/52416,2026-10-05
+motorbike,VinFast Vento Neo,Vento Neo,Pin LFP,Cao cấp,32000000,,LFP,3.5,/static/vehicle-placeholder.svg,true,current,https://vinfastauto.com/vn_vi/hop-dong-va-chinh-sach/download/52416,2026-10-05
+motorbike,VinFast Theon S,Theon S,Pin LFP,Cao cấp,56900000,,LFP,3.5,/static/vehicle-placeholder.svg,true,current,https://vinfastauto.com/vn_vi/hop-dong-va-chinh-sach/download/52416,2026-10-05
+motorbike,VinFast Klara S,Klara S,Kèm pin,Lịch sử,24250000,,Lithium-ion,,/static/vehicle-placeholder.svg,false,discontinued,https://vinfastauto.com/vn_vi/hop-dong-va-chinh-sach/download/52416,2026-10-05
+motorbike,VinFast Theon,Theon,Kèm pin,Lịch sử,40550000,,Lithium-ion,,/static/vehicle-placeholder.svg,false,discontinued,https://vinfastauto.com/vn_vi/hop-dong-va-chinh-sach/download/52416,2026-10-05
+motorbike,VinFast Vento,Vento,Kèm pin,Lịch sử,36775000,,Lithium-ion,,/static/vehicle-placeholder.svg,false,discontinued,https://vinfastauto.com/vn_vi/hop-dong-va-chinh-sach/download/52416,2026-10-05
+motorbike,VinFast Impes,Impes,Kèm pin,Lịch sử,23500000,,Lithium-ion,,/static/vehicle-placeholder.svg,false,discontinued,https://vinfastauto.com/vn_vi/hop-dong-va-chinh-sach/download/52416,2026-10-05
+motorbike,VinFast Ludo,Ludo,Kèm pin,Lịch sử,21500000,,Lithium-ion,,/static/vehicle-placeholder.svg,false,discontinued,https://vinfastauto.com/vn_vi/hop-dong-va-chinh-sach/download/52416,2026-10-05
+motorbike,VinFast Tempest,Tempest,Kèm pin,Lịch sử,19250000,,Lithium-ion,,/static/vehicle-placeholder.svg,false,discontinued,https://vinfastauto.com/vn_vi/hop-dong-va-chinh-sach/download/52416,2026-10-05
+motorbike,VinFast Feliz,Feliz,Kèm pin,Lịch sử,24900000,,Lithium-ion,,/static/vehicle-placeholder.svg,false,discontinued,https://vinfastauto.com/vn_vi/hop-dong-va-chinh-sach/download/52416,2026-10-05
+motorbike,VinFast Klara A1,Klara A1,Kèm pin,Lịch sử,36000000,,Lithium-ion,,/static/vehicle-placeholder.svg,false,discontinued,https://vinfastauto.com/vn_vi/hop-dong-va-chinh-sach/download/52416,2026-10-05
+motorbike,VinFast Klara A2,Klara A2,Kèm pin,Lịch sử,21000000,,Lithium-ion,,/static/vehicle-placeholder.svg,false,discontinued,https://vinfastauto.com/vn_vi/hop-dong-va-chinh-sach/download/52416,2026-10-05
+motorbike,VinFast Klara A2-1,Klara A2-1,Kèm pin,Lịch sử,26900000,,Lithium-ion,,/static/vehicle-placeholder.svg,false,discontinued,https://vinfastauto.com/vn_vi/hop-dong-va-chinh-sach/download/52416,2026-10-05

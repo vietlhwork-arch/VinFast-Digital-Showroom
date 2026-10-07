@@ -5,6 +5,7 @@ from sqlalchemy import (
     JSON,
     BigInteger,
     Boolean,
+    CheckConstraint,
     Date,
     DateTime,
     Float,
@@ -12,6 +13,7 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    UniqueConstraint,
     func,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
@@ -124,6 +126,7 @@ class CarCatalog(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    media = relationship("VehicleMedia", back_populates="car", cascade="all, delete-orphan", lazy="selectin")
 
     # Compatibility properties for legacy code expecting id, name, code, base_price, specs
     @property
@@ -207,6 +210,7 @@ class MotorbikeCatalog(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    media = relationship("VehicleMedia", back_populates="motorbike", cascade="all, delete-orphan", lazy="selectin")
 
     # Compatibility properties for legacy code expecting id, name, code, base_price, specs
     @property
@@ -252,6 +256,49 @@ class MotorbikeCatalog(Base):
     @is_available.setter
     def is_available(self, value: bool):
         self.is_active = value
+
+
+class VehicleMedia(Base):
+    """Normalized product media for cars and motorbikes.
+
+    Exactly one catalog foreign key is populated. Files live in static/object
+    storage; the database stores only URLs and searchable metadata.
+    """
+
+    __tablename__ = "vehicle_media"
+    __table_args__ = (
+        CheckConstraint(
+            "(car_id IS NOT NULL AND motorbike_id IS NULL) OR "
+            "(car_id IS NULL AND motorbike_id IS NOT NULL)",
+            name="ck_vehicle_media_exactly_one_vehicle",
+        ),
+        UniqueConstraint("car_id", "motorbike_id", "url", name="uq_vehicle_media_vehicle_url"),
+    )
+
+    media_id: Mapped[uuid.UUID] = mapped_column(GUID(), primary_key=True, default=uuid.uuid4)
+    car_id: Mapped[uuid.UUID | None] = mapped_column(
+        GUID(), ForeignKey("car_catalog.car_id", ondelete="CASCADE"), index=True
+    )
+    motorbike_id: Mapped[uuid.UUID | None] = mapped_column(
+        GUID(), ForeignKey("motorbike_catalog.motorbike_id", ondelete="CASCADE"), index=True
+    )
+    url: Mapped[str] = mapped_column(Text, nullable=False)
+    media_type: Mapped[str] = mapped_column(String(30), default="exterior", index=True, nullable=False)
+    angle: Mapped[str | None] = mapped_column(String(50))
+    color_code: Mapped[str | None] = mapped_column(String(80), index=True)
+    alt_text: Mapped[str | None] = mapped_column(String(255))
+    sort_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    is_primary: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    source_url: Mapped[str | None] = mapped_column(Text)
+    source_label: Mapped[str | None] = mapped_column(String(120))
+    checksum: Mapped[str | None] = mapped_column(String(64), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    car = relationship("CarCatalog", back_populates="media")
+    motorbike = relationship("MotorbikeCatalog", back_populates="media")
 
 
 # Alias for legacy references to EScooter

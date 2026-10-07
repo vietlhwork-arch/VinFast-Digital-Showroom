@@ -43,6 +43,11 @@ Ký hiệu quyền: `Public`, `C` customer, `S` consultant, `A` admin, `Auth` m�
 | POST | `/api/v1/motorbikes` | S/A | Tạo xe máy điện |
 | PUT | `/api/v1/motorbikes/{id}` | S/A | Cập nhật xe máy điện |
 | DELETE | `/api/v1/motorbikes/{id}` | A | Xóa xe máy điện |
+| GET | `/api/v1/catalog-media/{vehicle-type}/{vehicle-id}` | Public | Danh sách media của xe |
+| POST | `/api/v1/catalog-media/{vehicle-type}/{vehicle-id}/links` | S/A | Thêm tối đa 100 URL media |
+| POST | `/api/v1/catalog-media/{vehicle-type}/{vehicle-id}/upload` | S/A | Tải tối đa 20 ảnh, mỗi ảnh tối đa 8 MB |
+| PUT | `/api/v1/catalog-media/{media-id}` | S/A | Cập nhật metadata hoặc ảnh chính |
+| DELETE | `/api/v1/catalog-media/{media-id}` | S/A | Xóa media |
 | GET | `/api/v1/locations` | Public | Showroom/trạm sạc |
 | POST | `/api/v1/locations/sync` | A | Nạp lại dataset địa điểm |
 | POST | `/api/v1/tco/calculate` | Public | Tính chi phí sở hữu theo tham số |
