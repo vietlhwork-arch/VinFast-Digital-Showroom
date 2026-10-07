@@ -431,7 +431,6 @@ export default function EnergyPage({ onBackToHome, onOpenChat }: EnergyPageProps
                 className="w-full h-auto max-h-[340px] object-cover rounded-2xl"
               >
                 <source src={videoNhaMay} type="video/mp4" />
-                <source src="/VINpng/nangluong/Khám phá nhà máy sản xuất.mp4" type="video/mp4" />
                 <source src={CLOUD_ASSETS.VIDEO_NHA_MAY_BLOB} type="video/mp4" />
                 Trình duyệt của bạn không hỗ trợ thẻ video.
               </video>

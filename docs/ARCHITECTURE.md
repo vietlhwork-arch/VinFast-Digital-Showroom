@@ -8,15 +8,15 @@ Pha 1 ưu tiên tính đúng, dễ đọc và có thể kiểm thử trên một
 
 ```mermaid
 flowchart TB
-    Browser[React browser client]
+    Client[Swagger / HTTP / WebSocket client]
     API[API adapters<br/>FastAPI + Pydantic]
     Business[Business use cases<br/>plain Python]
     Port[Repository protocols]
     Adapter[SQLAlchemy repositories]
     DB[(SQLite / PostgreSQL)]
 
-    Browser -->|REST JSON| API
-    Browser <-->|WebSocket events| API
+    Client -->|REST JSON| API
+    Client <-->|WebSocket events| API
     API --> Business
     Business --> Port
     Port --> Adapter
@@ -28,7 +28,7 @@ Quy tắc dependency:
 - API chịu trách nhiệm HTTP, schema, status code, dependency injection và broadcast.
 - Business chịu trách nhiệm quyền nghiệp vụ, state transition và validation. `src/services/support_chat.py` không import web framework hoặc DB library.
 - Repository protocol mô tả đúng dữ liệu use case cần. SQLAlchemy adapter chuyển ORM row thành dataclass nghiệp vụ.
-- ORM model chỉ mô tả lưu trữ; React không truy cập database trực tiếp.
+- ORM model chỉ mô tả lưu trữ; client không truy cập database trực tiếp.
 
 Catalog, báo giá và lịch lái thử là các module có sẵn được giữ lại làm chức năng hỗ trợ. Chat là vertical slice chuẩn để nhóm áp dụng khi tiếp tục tách các module cũ ở Pha 2.
 
@@ -36,13 +36,13 @@ Catalog, báo giá và lịch lái thử là các module có sẵn được gi�
 
 ```mermaid
 flowchart LR
-    SPA[React SPA] -->|HTTPS /api/v1| App[FastAPI process]
-    SPA <-->|WSS| App
+    Client[API client] -->|HTTPS /api/v1| App[FastAPI process]
+    Client <-->|WSS| App
     App --> SQL[(PostgreSQL)]
     App --> Files[(Static uploads)]
 ```
 
-Không có kết nối từ frontend tới PostgreSQL. Không có provider cần API key. Với local/Docker đơn process, WebSocket connections được giữ trong memory; tin nhắn luôn ghi database trước khi broadcast.
+Không có kết nối từ client tới PostgreSQL và không có provider cần API key. Docker Pha 1 chỉ đóng gói backend. Với một process, WebSocket connections được giữ trong memory; tin nhắn luôn ghi database trước khi broadcast.
 
 ## Mô hình dữ liệu chat
 
@@ -93,7 +93,7 @@ erDiagram
 
 - Unit test business service bằng fake repository, không cần FastAPI/database.
 - Integration test dùng SQLite tạm và HTTPX để kiểm tra auth, ownership và full chat flow.
-- TypeScript typecheck và production build kiểm tra client.
+- OpenAPI contract test kiểm tra endpoint, schema và security declaration.
 - Load script chỉ gọi endpoint đọc, phù hợp chạy nhiều lần trên Kaggle CPU.
 
 ## Thuộc tính chất lượng Pha 2

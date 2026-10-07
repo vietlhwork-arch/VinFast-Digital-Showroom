@@ -9,8 +9,6 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
-      '/VINpng': fileURLToPath(new URL('./VINpng', import.meta.url)),
-      '/static': fileURLToPath(new URL('../backend/static', import.meta.url)),
     },
   },
   server: {
@@ -18,6 +16,17 @@ export default defineConfig({
     port: 5173,
     watch: {
       usePolling: true,
+    },
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+        ws: true,
+      },
+      '/static': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
     },
   },
   optimizeDeps: {

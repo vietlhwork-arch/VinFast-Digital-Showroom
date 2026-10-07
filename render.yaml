@@ -3,7 +3,7 @@
 
 services:
   - type: web
-    name: vinfast-ai-advisor
+    name: vinfast-digital-showroom
     runtime: docker
     plan: free
     region: singapore
@@ -15,8 +15,6 @@ services:
         value: production
       - key: SECRET_KEY
         generateValue: true
-      - key: OPENAI_API_KEY
-        sync: false # Set manually in Render Dashboard for security
       - key: DATABASE_URL
         value: sqlite+aiosqlite:///./data/vinfast.db
       - key: CORS_ORIGINS

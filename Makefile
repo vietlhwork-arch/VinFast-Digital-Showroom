@@ -1,4 +1,4 @@
-.PHONY: run test lint format typecheck check clean
+.PHONY: run test lint format check
 
 run:
 	uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
@@ -12,12 +12,4 @@ lint:
 format:
 	ruff format src/ tests/
 
-typecheck:
-	mypy src/
-
-check: lint format test
-
-clean:
-	find . -type d -name __pycache__ -exec rm -rf {} +
-	find . -type d -name .pytest_cache -exec rm -rf {} +
-	find . -type d -name .ruff_cache -exec rm -rf {} +
+check: lint test

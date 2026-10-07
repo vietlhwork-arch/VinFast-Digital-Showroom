@@ -17,19 +17,9 @@ frontend/.vite
 /data/
 /data/chroma
 
-# Logs & AI IDE cache
-.ai-log/
-.agents/
-.claude/
-.codex/
-.cursor/
-.gemini/
-
-# Root level docs & scripts (preserve frontend/scripts)
+# Backend-only course material and local tooling
 /docs/
-/presentation/
 /tests/
-/eval/
 /scripts/
 *.pyc
 __pycache__/

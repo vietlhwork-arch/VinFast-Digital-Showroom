@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import os
-import shutil
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -23,7 +21,6 @@ from src.services.vinfast_locations_service import seed_vinfast_locations_if_emp
 settings = get_settings()
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 STATIC_DIR = PROJECT_ROOT / "static"
-FRONTEND_PUBLIC = PROJECT_ROOT / "frontend" / "public"
 FRONTEND_DIST = PROJECT_ROOT / "frontend" / "dist"
 
 
@@ -51,15 +48,6 @@ async def seed_demo_accounts() -> None:
         await session.commit()
 
 
-def sync_static_assets() -> None:
-    """Keep catalog uploads available to both FastAPI and Vite builds."""
-    source = FRONTEND_PUBLIC / "static" / "uploads"
-    target = STATIC_DIR / "uploads"
-    target.mkdir(parents=True, exist_ok=True)
-    if source.exists():
-        shutil.copytree(source, target, dirs_exist_ok=True)
-
-
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     if settings.app_env == "production" and (
@@ -71,7 +59,6 @@ async def lifespan(_: FastAPI):
     ):
         raise RuntimeError("SECRET_KEY must be a private random value in production")
     STATIC_DIR.mkdir(parents=True, exist_ok=True)
-    sync_static_assets()
     async with engine.begin() as connection:
         await connection.run_sync(Base.metadata.create_all)
     if settings.app_env != "production":

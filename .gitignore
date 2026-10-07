@@ -28,8 +28,10 @@ env/
 .DS_Store
 Thumbs.db
 
-# Data (never commit large data)
-/data/
+# Data (never commit runtime databases; allow reviewable catalog seeds)
+/data/*
+!/data/catalog/
+!/data/catalog/*.csv
 !frontend/src/data/
 *.db
 *.sqlite3
@@ -51,15 +53,12 @@ node_modules/
 .next/
 out/
 .nuxt/
+/frontend/public/static/
+/frontend/public/VINpng/
 
 # Build
 *.pyc
 *.pyo
 
-# AI logs
-.ai-log/.deleted_prompts
-.ai-log/*.jsonl
-.ai-log/archive/
 .vercel
 .env*
-scripts/log_antigravity.py

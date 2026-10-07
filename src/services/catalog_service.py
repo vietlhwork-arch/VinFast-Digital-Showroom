@@ -126,9 +126,9 @@ def _generate_model_aliases(item: dict[str, Any], is_car: bool = True) -> dict[s
     if ver and ver not in tails and ver not in (line, code):
         tails.append(ver.lower())
 
-    GENERIC_TRIMS = {"plus", "eco", "base", "tiêu chuẩn", "tieu chuan", "nâng cao", "nang cao", "cao cấp", "cao cap", "premium", "lite", "s", "s2"}
+    generic_trims = {"plus", "eco", "base", "tiêu chuẩn", "tieu chuan", "nâng cao", "nang cao", "cao cấp", "cao cap", "premium", "lite", "s", "s2"}
     for t in tails:
-        if t not in GENERIC_TRIMS:
+        if t not in generic_trims:
             add(t)
             add(f"bản {t}")
             add(f"bản {t.replace('-', ' ')}")

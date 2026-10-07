@@ -1,6 +1,8 @@
 # VinFast Digital Showroom
 
-Ứng dụng showroom số gồm danh mục ô tô/xe máy điện, yêu cầu báo giá, đặt lịch lái thử, CRM gọn nhẹ và chat thời gian thực giữa khách hàng với nhân viên. Sản phẩm không dùng chatbot, mô hình ngôn ngữ, vector database hoặc API key của bên thứ ba.
+Backend showroom số gồm danh mục ô tô/xe máy điện, yêu cầu báo giá, đặt lịch lái thử, CRM gọn nhẹ và chat thời gian thực giữa khách hàng với nhân viên. Sản phẩm không dùng chatbot, mô hình ngôn ngữ, vector database hoặc API key của bên thứ ba.
+
+Pha 1 của môn Kiến trúc phần mềm chỉ đánh giá backend. Thư mục `frontend/` được giữ làm client tham khảo cho API, không nằm trong artefact Docker hoặc tiêu chí nghiệm thu Pha 1.
 
 ## Phạm vi sản phẩm
 
@@ -15,7 +17,7 @@ Chat hỗ trợ được lưu trong database. REST API dùng để tải lịch 
 ## Kiến trúc
 
 ```text
-React/Vite UI
+Swagger / HTTP client
     │  JSON/REST + WebSocket
     ▼
 FastAPI API layer          src/api/
@@ -38,7 +40,7 @@ Chi tiết quyết định kiến trúc: [docs/ARCHITECTURE.md](docs/ARCHITECTUR
 
 - Backend: Python 3.10+, FastAPI, Pydantic, SQLAlchemy async.
 - Database: SQLite cho phát triển; PostgreSQL qua `asyncpg` cho môi trường dùng chung.
-- Frontend: React 18, TypeScript, Vite, Tailwind CSS.
+- Client tham khảo: React 18, TypeScript, Vite, Tailwind CSS; không thuộc phạm vi Pha 1.
 - Realtime: WebSocket của FastAPI.
 - Kiểm thử: pytest, pytest-asyncio, HTTPX.
 - Đóng gói: Docker multi-stage, chạy bằng user không phải root.
@@ -56,7 +58,7 @@ python scripts/seed_catalog_from_frontend.py
 uvicorn src.main:app --reload --port 8000
 ```
 
-Frontend ở terminal khác:
+Nếu cần thử client tham khảo, chạy ở terminal khác:
 
 ```powershell
 cd frontend
@@ -96,15 +98,13 @@ python scripts/seed_catalog_from_frontend.py
 docker compose up --build
 ```
 
-Container phục vụ cả API và frontend tại `http://localhost:8000`; dữ liệu SQLite được lưu ở `./data`. File `.env` là tùy chọn cho local nhưng bắt buộc phải cung cấp `SECRET_KEY` riêng khi đặt `APP_ENV=production`.
+Container chỉ đóng gói backend và phục vụ API tại `http://localhost:8000`; dữ liệu SQLite được lưu ở `./data`. File `.env` là tùy chọn cho local nhưng bắt buộc phải cung cấp `SECRET_KEY` riêng khi đặt `APP_ENV=production`.
 
 ## Kiểm thử và kiểm tra chất lượng
 
 ```powershell
 pytest -q
-cd frontend
-npm run typecheck
-npm run build
+ruff check src tests
 ```
 
 Load test không cần cài thêm thư viện:
@@ -119,15 +119,14 @@ Quy trình cố định cấu hình Kaggle CPU và cách báo cáo trước/sau 
 
 - [Đặc tả API và WebSocket](docs/API.md)
 - [Kiến trúc và các thuộc tính chất lượng](docs/ARCHITECTURE.md)
-- [Kế hoạch Pha 1, Pha 2 và phân công nhóm](docs/PHASE_PLAN.md)
+- [Phân công backend Pha 1](docs/PHASE1_BACKEND_ASSIGNMENT.md)
+- [Bản phân công one-page](docs/PHASE1_BACKEND_REPORT_ONE_PAGE.md)
+- [Kế hoạch Pha 1 và Pha 2](docs/PHASE_PLAN.md)
 - [Quy trình load test Kaggle](docs/KAGGLE_LOAD_TEST.md)
-
-Các tài liệu cũ trong `docs/GATE_1`, `docs/GATE_2` và `docs/guide` là tài liệu lưu trữ của phạm vi trước, không còn là đặc tả của sản phẩm hiện tại. Bốn tài liệu trên là nguồn chuẩn để phát triển và chấm bài.
 
 ## Cấu trúc chính
 
 ```text
-frontend/src/                 React UI
 src/api/                      HTTP/WebSocket adapters
 src/services/                 business use cases và dịch vụ ứng dụng
 src/repositories/             data-access adapters
@@ -135,12 +134,13 @@ src/models/                   ORM models và API schemas
 tests/                        unit/integration tests
 scripts/                      seed dữ liệu và load test
 docs/                         tài liệu chuẩn của sản phẩm
+frontend/src/                 client tham khảo, ngoài Pha 1
 ```
 
 ## Nhóm phát triển
 
 - Lê Hoàng Việt — Lead, kiến trúc và tích hợp.
 - Hoàng Lê Minh — backend nghiệp vụ, dữ liệu và kiểm thử tải.
-- Nguyễn Văn Toán — realtime chat, frontend và kiểm thử luồng người dùng.
+- Nguyễn Văn Toán — realtime chat, supporting API và kiểm thử tích hợp.
 
 Phân công theo deliverable và tiêu chí nghiệm thu được mô tả trong [docs/PHASE_PLAN.md](docs/PHASE_PLAN.md).

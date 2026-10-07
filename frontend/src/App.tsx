@@ -766,8 +766,8 @@ export default function App() {
                 className="h-8 w-auto object-contain brightness-0 invert"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
-                  if (!target.src.includes('/VINpng/')) {
-                    target.src = '/VINpng/Pin/VinFast-logo.png';
+                  if (!target.src.endsWith('/favicon.svg')) {
+                    target.src = '/favicon.svg';
                   }
                 }}
               />

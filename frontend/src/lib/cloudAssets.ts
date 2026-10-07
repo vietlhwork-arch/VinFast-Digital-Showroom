@@ -7,7 +7,7 @@ const mapping = (blobMapping || {}) as Record<string, string>;
  * Returns absolute Cloud Storage / Vercel Blob URL for any relative asset path
  */
 export function getCloudAssetUrl(relativePath: string): string {
-  if (!relativePath) return '/VINpng/AdsCars/vf8-4k.png';
+  if (!relativePath) return '/static/vehicle-placeholder.svg';
   if (relativePath.startsWith('http://') || relativePath.startsWith('https://')) {
     return relativePath;
   }

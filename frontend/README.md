@@ -9,7 +9,8 @@ npm run typecheck
 npm run build
 ```
 
-Mặc định client gọi backend cùng origin qua `/api`. Khi chạy hai dev server, đặt:
+Vite dev server mặc định proxy `/api` và `/static` sang backend tại
+`http://127.0.0.1:8000`. Chỉ đặt biến sau nếu backend chạy ở host khác:
 
 ```dotenv
 VITE_API_URL=http://127.0.0.1:8000

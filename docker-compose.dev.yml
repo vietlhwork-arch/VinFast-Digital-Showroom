@@ -21,17 +21,3 @@ services:
       start_period: 15s
     command: ["uvicorn", "src.main:app", "--reload", "--host", "0.0.0.0", "--port", "8000"]
 
-
-  frontend:
-    image: node:20-slim
-    working_dir: /app
-    ports:
-      - "5173:5173"
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-    command: sh -c "npm install && npm run dev"
-    environment:
-      - VITE_API_URL=http://localhost:8000
-    restart: unless-stopped
-

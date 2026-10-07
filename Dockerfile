@@ -1,20 +1,8 @@
-# ============================================
-# Multi-Stage Production Dockerfile for Render
-# ============================================
+# Backend-only image used for Phase 1.
+# Frontend sources remain in the repository for reference but are not part of
+# the assessed runtime artifact.
 
-# ---- Stage 1: Build React Frontend ----
-FROM node:20-slim AS frontend-builder
-WORKDIR /app/frontend
-
-COPY frontend/package*.json ./
-RUN npm ci || npm install
-
-COPY frontend/ ./
-COPY static/ ./static/
-
-RUN npm run build
-
-# ---- Stage 2: Install Python Dependencies ----
+# ---- Stage 1: Install Python dependencies ----
 FROM python:3.11-slim AS python-builder
 WORKDIR /app
 
@@ -24,7 +12,7 @@ ENV PATH="/opt/venv/bin:$PATH"
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# ---- Stage 3: Production Runtime Container ----
+# ---- Stage 2: Production runtime ----
 FROM python:3.11-slim AS production
 WORKDIR /app
 
@@ -33,15 +21,14 @@ COPY --from=python-builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 ENV PYTHONUNBUFFERED=1
 
-# Copy backend application source
-COPY . .
-
-# Copy compiled SPA dist from frontend-builder stage
-COPY --from=frontend-builder /app/frontend/dist /app/frontend/dist
+# Copy only runtime-owned backend files. Documentation, tests and the optional
+# frontend client never enter the Phase 1 image.
+COPY src ./src
+COPY static ./static
 
 # Security: Create non-root user & ensure directory permissions
 RUN useradd -m appuser && \
-    mkdir -p /app/data /app/static /app/frontend/public && \
+    mkdir -p /app/data /app/static && \
     chown -R appuser:appuser /app
 
 USER appuser

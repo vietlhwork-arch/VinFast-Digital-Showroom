@@ -115,8 +115,8 @@ export default function Header({
               className={`h-7 sm:h-9 w-auto object-contain transition-all group-hover:scale-105 filter drop-shadow-md ${isSolid ? '' : 'brightness-0 invert'}`}
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
-                if (!target.src.includes('/VINpng/')) {
-                  target.src = '/VINpng/Pin/VinFast-logo.png';
+                if (!target.src.endsWith('/favicon.svg')) {
+                  target.src = '/favicon.svg';
                 }
               }}
             />
