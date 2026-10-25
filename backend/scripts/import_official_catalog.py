@@ -20,27 +20,22 @@ def optional_number(value: str, cast):
     return cast(value) if value.strip() else None
 
 
-def normalize_database_url(url: str) -> str:
-    if url.startswith("postgresql://"):
-        return "postgresql+asyncpg://" + url.removeprefix("postgresql://")
-    if url.startswith("postgres://"):
-        return "postgresql+asyncpg://" + url.removeprefix("postgres://")
-    return url
 
 
 async def import_catalog(csv_path: Path) -> None:
     from sqlalchemy import select
 
-    from src.models.domain import Base, CarCatalog, MotorbikeCatalog
-    from src.services.database import SessionLocal, engine
+    from src.infrastructure.bootstrap import create_schema
+    from src.infrastructure.database import SessionLocal, engine
+    from src.infrastructure.orm import CarRow as CarCatalog
+    from src.infrastructure.orm import MotorbikeRow as MotorbikeCatalog
 
     rows = list(csv.DictReader(csv_path.read_text(encoding="utf-8-sig").splitlines()))
     required = {"vehicle_type", "model_name", "vehicle_line", "category", "list_price", "source_url"}
     if not rows or not required.issubset(rows[0]):
         raise ValueError(f"CSV thiếu cột bắt buộc: {sorted(required)}")
 
-    async with engine.begin() as connection:
-        await connection.run_sync(Base.metadata.create_all)
+    await create_schema()
 
     inserted = updated = 0
     async with SessionLocal() as session:
@@ -110,7 +105,7 @@ def main() -> None:
     parser.add_argument("--database-url")
     args = parser.parse_args()
     if args.database_url:
-        os.environ["DATABASE_URL"] = normalize_database_url(args.database_url)
+        os.environ["DATABASE_URL"] = args.database_url
     asyncio.run(import_catalog(args.csv))
 
 
