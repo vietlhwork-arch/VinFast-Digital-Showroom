@@ -10,6 +10,7 @@ import urllib.error
 import urllib.request
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timezone
 from pathlib import Path
 from threading import Lock
 
@@ -73,6 +74,7 @@ def main() -> int:
 
     samples: list[tuple[float, str]] = []
     lock = Lock()
+    started_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
     started = time.perf_counter()
     deadline = started + args.duration
     base_url = args.base_url.rstrip("/")
@@ -100,6 +102,7 @@ def main() -> int:
     successful = sum(count for status, count in outcomes.items() if status.startswith("2"))
     total = len(samples)
     result = {
+        "started_at": started_at,
         "base_url": base_url,
         "paths": list(DEFAULT_PATHS),
         "duration_seconds": round(elapsed, 3),
