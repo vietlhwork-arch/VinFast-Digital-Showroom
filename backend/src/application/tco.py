@@ -1,39 +1,48 @@
 """Pure, deterministic total-cost-of-ownership calculator."""
 
+from __future__ import annotations
+
+from dataclasses import dataclass, field
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+VehicleTypeCode = Literal["CAR", "MOTORBIKE"]
+ProvinceCode = Literal["HN", "HCM", "OTHER"]
+BatteryOption = Literal["RENTAL", "BUY"]
 
 
-class TCOCalculationRequest(BaseModel):
-    vehicle_type: Literal["CAR", "MOTORBIKE"] = "CAR"
+@dataclass(frozen=True)
+class TCOCalculationRequest:
     model_id: str  # e.g., "vf3", "vf-5", "theon-s"
+    vehicle_type: VehicleTypeCode = "CAR"
     variant_id: str | None = None
-    province_code: Literal["HN", "HCM", "OTHER"] = "OTHER"
-    battery_option: Literal["RENTAL", "BUY"] = "RENTAL"
-    monthly_km_estimate: int = Field(default=1000, ge=0)
+    province_code: ProvinceCode = "OTHER"
+    battery_option: BatteryOption = "RENTAL"
+    monthly_km_estimate: int = 1000
     base_price_override: int | None = None
     battery_buy_price_override: int | None = None
     battery_rent_monthly_override: int | None = None
-    seat_count: int = Field(default=5, ge=2, le=9)
+    seat_count: int = 5
 
 
-class RollingCostBreakdown(BaseModel):
-    registration_fee_vnd: int = 0  # 0 VND for EV in Vietnam
+@dataclass(frozen=True)
+class RollingCostBreakdown:
     plate_fee_vnd: int
     road_maintenance_fee_vnd: int
     civil_insurance_vnd: int
     total_rolling_cost_vnd: int
+    registration_fee_vnd: int = 0  # 0 VND for EV in Vietnam
 
 
-class MonthlyOperatingCost(BaseModel):
+@dataclass(frozen=True)
+class MonthlyOperatingCost:
     battery_subscription_fee_vnd: int
     charging_electricity_cost_vnd: int
     estimated_maintenance_vnd: int
     total_monthly_cost_vnd: int
 
 
-class TCOCalculationResponse(BaseModel):
+@dataclass(frozen=True)
+class TCOCalculationResponse:
     vehicle_type: str
     model_id: str
     province_code: str
@@ -43,15 +52,14 @@ class TCOCalculationResponse(BaseModel):
     rolling_cost_breakdown: RollingCostBreakdown
     monthly_operating_cost: MonthlyOperatingCost
     disclaimer_text: str
-    comparison_summary: dict[str, Any] | None = None
+    comparison_summary: dict[str, Any] | None = field(default=None)
 
 
 DISCLAIMER_TEXT = "Mọi con số mang tính chất ước tính, vui lòng xác nhận báo giá chính thức với Tư vấn viên."
 PUBLIC_CHARGING_RATE_VND_PER_KWH = 3858
 
-# A deliberately small pricing baseline for the calculator. The API accepts
-# explicit overrides so catalog prices can be supplied without coupling this
-# business module to a database or web framework.
+# Bảng giá mặc định để tính toán độc lập với database và web framework.
+# API có thể truyền giá override để dùng giá cập nhật từ catalog.
 TCO_BASELINES: dict[str, dict[str, Any]] = {
     "vf3": {"code": "vf3", "base_price": 240_000_000, "battery_buy_price": 322_000_000, "seats": 4},
     "vf5": {"code": "vf5", "base_price": 496_000_000, "battery_buy_price": 548_000_000, "seats": 5},
@@ -70,6 +78,7 @@ def _find_vehicle_in_catalog(
     variant_id: str | None = None,
 ) -> tuple[dict[str, Any] | None, bool]:
     del variant_id
+    # Chuẩn hóa mã xe để tra cứu không phụ thuộc chữ hoa, dấu cách hay dấu gạch.
     normalized = "".join(character for character in str(model_id).lower() if character.isalnum())
     vehicle = TCO_BASELINES.get(normalized)
     if vehicle is None:
@@ -81,7 +90,7 @@ def calculate_tco(req: TCOCalculationRequest) -> TCOCalculationResponse:
     """Calculate deterministic rolling and monthly operating costs."""
     vehicle, is_car = _find_vehicle_in_catalog(req.model_id, req.variant_id)
 
-    # Determine vehicle type
+    # Ưu tiên thông tin xe trong bảng baseline; nếu không có thì dùng dữ liệu request.
     if vehicle:
         v_type = "CAR" if is_car else "MOTORBIKE"
         v_code = str(vehicle.get("code") or "").lower()
@@ -93,7 +102,7 @@ def calculate_tco(req: TCOCalculationRequest) -> TCOCalculationResponse:
         base_price = req.base_price_override or (500_000_000 if v_type == "CAR" else 30_000_000)
         seats = req.seat_count
 
-    # Battery buy price calculation
+    # Giá mua pin ưu tiên override, sau đó đến giá catalog và cuối cùng là mức ước tính.
     if req.battery_buy_price_override:
         battery_buy_price = req.battery_buy_price_override
     elif vehicle and vehicle.get("battery_buy_price"):
@@ -116,7 +125,7 @@ def calculate_tco(req: TCOCalculationRequest) -> TCOCalculationResponse:
         else:
             battery_buy_price = base_price + 19_000_000
 
-    # Battery monthly rental calculation
+    # Phí thuê pin cũng ưu tiên override; các mức còn lại là baseline theo dòng xe.
     if req.battery_rent_monthly_override:
         battery_rent_monthly = req.battery_rent_monthly_override
     elif vehicle and vehicle.get("battery_rent_monthly"):
@@ -144,10 +153,11 @@ def calculate_tco(req: TCOCalculationRequest) -> TCOCalculationResponse:
     else:
         list_price = base_price
 
-    # 1. Rolling Cost (Phí lăn bánh)
+    # 1. Phí lăn bánh: giá xe/pin cộng lệ phí trước bạ, biển số, bảo trì đường bộ và bảo hiểm.
     registration_fee = 0  # 0% for EV in VN
 
     if v_type == "CAR":
+        # Phí biển số phân biệt Hà Nội/TP.HCM với các tỉnh thành khác.
         if req.province_code in ["HN", "HCM"]:
             plate_fee = 20_000_000
         else:
@@ -179,7 +189,7 @@ def calculate_tco(req: TCOCalculationRequest) -> TCOCalculationResponse:
         total_rolling_cost_vnd=total_rolling_cost,
     )
 
-    # 2. Monthly Operating Cost
+    # 2. Chi phí vận hành tháng gồm thuê pin (nếu có), điện sạc và bảo dưỡng ước tính.
     if req.battery_option == "RENTAL":
         battery_fee = battery_rent_monthly
     else:
@@ -187,6 +197,7 @@ def calculate_tco(req: TCOCalculationRequest) -> TCOCalculationResponse:
 
     if vehicle and vehicle.get("battery_kwh") and vehicle.get("range_km"):
         try:
+            # Nếu catalog có dung lượng pin và quãng đường, suy ra mức tiêu thụ kWh/100 km.
             kwh = float(vehicle["battery_kwh"])
             rng = float(vehicle["range_km"])
             if rng > 0:
@@ -225,7 +236,7 @@ def calculate_tco(req: TCOCalculationRequest) -> TCOCalculationResponse:
         total_monthly_cost_vnd=total_monthly,
     )
 
-    # 3. Comparison summary between RENTAL & BUY
+    # Ước tính số tháng để phần chênh lệch giá mua pin bằng tổng phí thuê pin.
     delta_battery_buy = battery_buy_price - base_price
     breakeven_months = (delta_battery_buy // battery_rent_monthly) if battery_rent_monthly > 0 else 0
 
