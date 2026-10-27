@@ -1,40 +1,31 @@
-"""Seed the SQL catalog from the frontend's bundled vehicle snapshot.
+"""Export the frontend's bundled vehicle list into the reviewable seed dataset.
 
-This script intentionally does not delete rows and does not build RAG vectors.
-It is safe for an offline/UI demo where no LLM API key is configured.
+The backend never reads frontend sources at runtime. Run this script only when
+the reference catalog changes, review the JSON diff, and commit it:
+
+    python scripts/export_catalog_snapshot.py
+
+The application seeds an empty database from data/catalog/vehicles.json.
 """
 
 from __future__ import annotations
 
 import argparse
-import asyncio
 import json
-import os
-import sys
 from pathlib import Path
 from typing import Any
 
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
 REPOSITORY_ROOT = BACKEND_ROOT.parent
 FRONTEND_CATALOG = REPOSITORY_ROOT / "frontend" / "src" / "data" / "vehicles.ts"
-sys.path.insert(0, str(BACKEND_ROOT))
+DEFAULT_OUTPUT = REPOSITORY_ROOT / "data" / "catalog" / "vehicles.json"
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--database-url",
-        help="SQLAlchemy database URL. Defaults to DATABASE_URL or the app's local SQLite database.",
-    )
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--source", type=Path, default=FRONTEND_CATALOG)
+    parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     return parser.parse_args()
-
-
-def normalize_database_url(url: str) -> str:
-    if url.startswith("postgresql://"):
-        return "postgresql+asyncpg://" + url.removeprefix("postgresql://")
-    if url.startswith("postgres://"):
-        return "postgresql+asyncpg://" + url.removeprefix("postgres://")
-    return url
 
 
 def load_frontend_catalog(path: Path = FRONTEND_CATALOG) -> list[dict[str, Any]]:
@@ -120,50 +111,26 @@ def motorbike_values(vehicle: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-async def upsert_catalog() -> None:
-    from sqlalchemy import select
-
-    from src.models.domain import Base, CarCatalog, MotorbikeCatalog
-    from src.services.database import SessionLocal, engine
-
-    vehicles = load_frontend_catalog()
-    async with engine.begin() as connection:
-        await connection.run_sync(Base.metadata.create_all)
-
-    inserted = {"cars": 0, "motorbikes": 0}
-    updated = {"cars": 0, "motorbikes": 0}
-    async with SessionLocal() as session:
-        for vehicle in vehicles:
-            raw = vehicle.get("rawSpecs") or {}
-            is_motorbike = vehicle.get("category") == "scooter" or bool(raw.get("motorbike_id"))
-            model = MotorbikeCatalog if is_motorbike else CarCatalog
-            values = motorbike_values(vehicle) if is_motorbike else car_values(vehicle)
-            primary_key = "motorbike_id" if is_motorbike else "car_id"
-            group = "motorbikes" if is_motorbike else "cars"
-            existing = await session.scalar(select(model).where(getattr(model, primary_key) == values[primary_key]))
-            if existing is None:
-                session.add(model(**values))
-                inserted[group] += 1
-            else:
-                for key, value in values.items():
-                    setattr(existing, key, value)
-                updated[group] += 1
-
-        await session.commit()
-
-    print(
-        "Catalog seed complete: "
-        f"cars inserted={inserted['cars']}, updated={updated['cars']}; "
-        f"motorbikes inserted={inserted['motorbikes']}, updated={updated['motorbikes']}."
-    )
-    await engine.dispose()
+def build_snapshot(vehicles: list[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
+    snapshot: dict[str, list[dict[str, Any]]] = {"cars": [], "motorbikes": []}
+    for vehicle in vehicles:
+        raw = vehicle.get("rawSpecs") or {}
+        if vehicle.get("category") == "scooter" or raw.get("motorbike_id"):
+            snapshot["motorbikes"].append(motorbike_values(vehicle))
+        else:
+            snapshot["cars"].append(car_values(vehicle))
+    for group in snapshot.values():
+        for row in group:
+            row.update({key: str(value) for key, value in row.items() if key.endswith("_id")})
+    return snapshot
 
 
 def main() -> None:
     args = parse_args()
-    if args.database_url:
-        os.environ["DATABASE_URL"] = normalize_database_url(args.database_url)
-    asyncio.run(upsert_catalog())
+    snapshot = build_snapshot(load_frontend_catalog(args.source))
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.output.write_text(json.dumps(snapshot, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n")
+    print(f"Wrote {len(snapshot['cars'])} cars and {len(snapshot['motorbikes'])} motorbikes to {args.output}")
 
 
 if __name__ == "__main__":
